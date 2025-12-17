@@ -1,0 +1,9 @@
+uvicorn search_host:app --host 0.0.0.0 --port 8505
+
+CUDA_VISIBLE_DEVICES=5 uvicorn search_host_with_BM25:app --host 0.0.0.0 --port 8505
+CUDA_VISIBLE_DEVICES=1 uvicorn search_host_with_BM25_2:app --host 0.0.0.0 --port 8506
+
+
+
+CUDA_VISIBLE_DEVICES=2,3 uvicorn summrization_host:app --host 0.0.0.0 --port 8502
+CUDA_VISIBLE_DEVICES=4 uvicorn summrization_host2:app --host 0.0.0.0 --port 8503
