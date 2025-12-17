@@ -19,12 +19,7 @@ import aiohttp
 import asyncio
 from promts_llm_think import get_prompt
 
-Batch_SERVER_URL = "http://172.16.34.22:8506/batch_retrieve"
-Truncate_URL = "http://172.16.34.22:8505/truncate"
-summarization_batch_URL = "http://localhost:8502/summrization"
 
-NUM_PATHS = 16  # Number of parallel paths
-MAX_ROUNDS = 5  # Maximum number of rounds
 
 print("CUDA_VISIBLE_DEVICES:", os.environ.get("CUDA_VISIBLE_DEVICES"))
 
@@ -107,7 +102,7 @@ def search_iterator(args, qid_query_list, excluded_ids, original_qid=None):
         }
         
         try:
-            resp = requests.post(Batch_SERVER_URL, json=payload) # , timeout=300
+            resp = requests.post(argsBatch_SERVER_URL, json=payload) # , timeout=300
             resp.raise_for_status()  # Check HTTP errors
             
             # Try to parse JSON
@@ -254,7 +249,7 @@ def run_parallel_reasoning_agent(args, qid, original_query, initial_docs_set, di
         # Batch call to LLM
         try:
             payload = {"user_prompt_list": batch_contexts}
-            resp = requests.post(summarization_batch_URL, json=payload) # , timeout=600
+            resp = requests.post(args.summarization_batch_URL, json=payload) # , timeout=600
             resp.raise_for_status()
             data = resp.json()
             llm_outputs = data["response_list"]  # Should return a list
@@ -325,9 +320,17 @@ def run_parallel_reasoning_agent(args, qid, original_query, initial_docs_set, di
     return paths
 
 
-def main():
+def main()
+ 
     parser = argparse.ArgumentParser(description='DIVER-QExpand Parallel Version.')
-    parser.add_argument('--dataset_source', type=str, default='../data/BRIGHT')
+    parser.add_argument('--dataset_source', type=str, default='data/BRIGHT')
+    parser.add_argument('--examples_path', type=str, default='data_making/split_datasets/part_0')
+    parser.add_argument('--Batch_SERVER_URL', type=str, default='http://172.16.34.22:8506/batch_retrieve')
+    parser.add_argument('--Truncate_URL', type=str, default='http://172.16.34.22:8505/truncate')
+    parser.add_argument('--summarization_batch_URL', type=str, default='http://localhost:8502/summrization')
+    parser.add_argument('--NUM_PATHS', type=int, default=8)
+    parser.add_argument('--MAX_ROUNDS', type=int, default=5)
+    
     parser.add_argument('--task', type=str, required=True,
                         choices=['biology', 'earth_science', 'economics', 'pony', 'psychology', 'robotics',
                                  'stackoverflow', 'sustainable_living', 'aops', 'leetcode', 'theoremqa_theorems',
@@ -348,9 +351,10 @@ def main():
         os.makedirs(args.output_dir)
     
     # data loading
-    examples_path="/home/mingchen/3_Query_rewrite_RL/3_Diver-main2/zero_test_parallel/data_making/split_datasets/part_0"
+    # examples_path="/home/mingchen/3_Query_rewrite_RL/3_Diver-main2/zero_test_parallel/data_making/split_datasets/part_0"
+    
     examples = load_dataset("parquet", data_files=os.path.join(
-        examples_path, f"{args.task}_examples.parquet"))["train"]
+        args.examples_path, f"{args.task}_examples.parquet"))["train"]
     org_qid_query_list = [(data['id'], data['query']) for data in examples]
     print(f"Number of queries: {len(org_qid_query_list)}")
     
