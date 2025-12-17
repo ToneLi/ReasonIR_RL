@@ -35,7 +35,7 @@ for DATASET in "${tasks[@]}"; do
         --summarization_batch_URL ${SUMMARIZATION_BATCH_URL} \
         --NUM_PATHS ${NUM_PATHS} \
         --MAX_ROUNDS ${MAX_ROUNDS} \
-        --output_dir ./output_parallel_part1/${DATASET} \
+        --output_dir ./output_parallel_part2/${DATASET} \
         --overwrite_output_dir \
         --max_tokens 8192 
     
