@@ -18,10 +18,13 @@ download the data, data_making from [Google_data](https://drive.google.com/drive
 ###  start the summrization_host  host
 ```
 CUDA_VISIBLE_DEVICES=2,3 uvicorn summrization_host:app --host 0.0.0.0 --port 8502
+
+2 A100, 78GB, 
 ```
 ###  start Search search_host_with_BM25
 ```
 CUDA_VISIBLE_DEVICES=5 uvicorn search_host_with_BM25:app --host 0.0.0.0 --port 8505
+80GB
 ```
 ###  run code:
 ```
