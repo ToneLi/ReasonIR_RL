@@ -15,7 +15,10 @@ conda env create -f environment.yml
 ###  Model preparation
 Please download these two models in your model files:
 
-[Diver-Retriever-4B](https://huggingface.co/AQ-MedAI/Diver-Retriever-4B)
+[Diver-Retriever-4B](https://huggingface.co/AQ-MedAI/Diver-Retriever-4B),  please change the model path in search_host_with_BM25.py. line 333
+```
+model_path = "AQ-MedAI/Diver-Retriever-4B"
+```
 
 [Qwen/Qwen3-30B-A3B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507), please change the model path in summrization_host.py.
 ```
