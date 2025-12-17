@@ -1,5 +1,12 @@
 # ReasonIR_RL
-
+###
+Aim: Generate reasoning paths for each question in data_making/split_datasets. Each file (e.g., Part 1) in this directory contains around 2,000 questions across 11 tasks (e.g., AoPS). Therefore, each part corresponds to approximately 2,000 questions, and we need reasoning paths for at least 8,000 questions in total. I am running Part 1, so you can run Parts 2, 3, 4, 5, 6, and 7.
+Please only change the following parameters:
+```
+EXAMPLES_PATH="data_making/split_datasets/part_X"
+--output_dir ./output_parallel_partX/${DATASET}
+```
+where X ∈ {2, 3, 4, 5, 6, 7, 8, ...}.
 ### environment configuration
 ```
 conda env create -f environment.yml
