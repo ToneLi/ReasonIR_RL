@@ -13,7 +13,8 @@ Please download these two models in your model files:
 
 ###  Data preparation
 
-download the data, data_making from [Google_data](https://drive.google.com/drive/folders/1BGbbE_qOVAzvhiXy1i3TBGwQZyG9Rnvu?usp=sharing), and put them under the 0_reasoning_step_generation
+1) download the data, data_making from [Google_data](https://drive.google.com/drive/folders/1BGbbE_qOVAzvhiXy1i3TBGwQZyG9Rnvu?usp=sharing), and place them under 0_reasoning_step_generation.
+2) Download the [cache.zip](https://vadata.s3.us-east-2.amazonaws.com/cache.zip?response-content-disposition=inline&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEKr%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMiJHMEUCIQCXuK4CwxeRwYupKhdNm2Lyjx59qptABcpaFDolE1K1LQIgc2V07VdtVYilSyed1JOpjapHYEwElenEQsn5mqq2FbEquQMIcxAAGgwyNTM0OTA3ODU5ODEiDGOD64BnYWgH6LxPZiqWAzAeAdiJQ3g%2FNW1ZKbP%2B7HWl5QOqmOlJZ%2FE3JUJAt0Jrb7tr66sqvx3ZbtrUOQU8eKnOZm5xlteS793K%2FSkSmz%2FWME4A08xxgbXtlaPlBe29a%2FHouTwF2MT1aM5UKujsmOOdmXWeugAwFZSDhwB%2ByM5e%2Bnpu11dkQPBMZx%2BI%2F%2FEUPDDTxdFZg%2FI0ij%2FU4TuN3cA7rcI3%2FHc5MkvJg%2B4IXgymF8VisxUinxATwxJllboYJ6gHuy0sLToirJxHgrWMPFSrpNbCI44FNvtRJZjjn9ZDXnXol3VyVKBiEqj0VyhJMY1jPGAQMGf1EV50pAwhnShI4bjpuJcYirkbFuuzLGQ2sQWTXRtdKLCChdiCZN3sFvptyHQ2%2BqAb8X4qWIGP5mtnRVd0KlKSoY3B%2FNboSibg26CCx5bKxdoMW2f0N1jx7il%2BUMUDNEaJ8gBupHUwQ9B%2F5ANxRSx7jDPtsP1RfvplSssybvFCn2fJMlurWpeg8zZceqcguabR86yTgC1aeMtGKoFdgwewnV2sgpSlWWM8jZugnNow7aiGygY63gK%2BLo6G3wGTpkGe2%2FG48lkeySQEFVkLBQEa6OyLujQZvVMr3DxQWUf6qTXw06m7pgSDqVRS3kI2Ygzhxi4S9DJXHUctCFh4vhYJzWdUrFns8Zx4mLgqHQSd4scLTp7tZJNfc5%2FmkdEyBR2lHlPlYkMu95DD01TWA0RXCFPU4XduOjtomVPKJoJORERsVHqnLXvshZmMOImoj6G7iHDzR2TvjZR6cx80VKg5AVPOZxelVBoJCaq0PuPZDJA7U%2B1SMQRgcMpVYeUHHWc5t1Eon5XffTi18WWWdTS8lqHvjLHegRsLJmEEC7ZReCdeWHFOma96q0nRIGVYlWX3NvkBGCwNSdMZkkrQVV%2F3dwuHf2YoEiU8UDaXGspdkb9Qkhfs5zbwA6nhtDbYe9JXJfxooBYwpoOGSXZf%2FeOPIcTRzyngSgKASTrZjaFQe1HeADoMMGkagCjA1sYgCgM%2BEU6l6w%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIATWBJ2N2663W7QSK5%2F20251217%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20251217T021618Z&X-Amz-Expires=43200&X-Amz-SignedHeaders=host&X-Amz-Signature=54930e8f99d914ce4dc492b397021bc2658cd0bb95b9c30d21632f82270e44d1) and unzip it and  and place them under 0_reasoning_step_generation.
 
 ###  start the summrization_host  host
 ```
@@ -24,7 +25,7 @@ CUDA_VISIBLE_DEVICES=2,3 uvicorn summrization_host:app --host 0.0.0.0 --port 850
 ###  start Search search_host_with_BM25
 ```
 CUDA_VISIBLE_DEVICES=5 uvicorn search_host_with_BM25:app --host 0.0.0.0 --port 8505
-80GB
+1 A100 around 8000MB
 ```
 ###  run code:
 ```
