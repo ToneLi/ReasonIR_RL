@@ -2,10 +2,14 @@
 
 tasks=("biology" "earth_science" "economics" "psychology" "robotics" "stackoverflow"  "sustainable_living" "leetcode" "pony" "aops" "theoremqa_theorems")
 
-KEEP_PASSAGE_NUM=5
+KEEP_PASSAGE_NUM=3
 NUM_HITS=100
+
+part=2
 DATASET_SOURCE="data/BRIGHT"
-EXAMPLES_PATH="data_making/split_datasets/part_2"
+EXAMPLES_PATH="data_making/split_datasets/part_%s"%(str(part))
+Output_file="output_parallel_part_%s"%(str(part))
+
 BATCH_SERVER_URL="http://172.16.34.22:8506/batch_retrieve"
 TRUNCATE_URL="http://172.16.34.22:8505/truncate"
 SUMMARIZATION_BATCH_URL="http://localhost:8502/summrization"
@@ -35,7 +39,7 @@ for DATASET in "${tasks[@]}"; do
         --summarization_batch_URL ${SUMMARIZATION_BATCH_URL} \
         --NUM_PATHS ${NUM_PATHS} \
         --MAX_ROUNDS ${MAX_ROUNDS} \
-        --output_dir ./output_parallel_part2/${DATASET} \
+        --output_dir ./${Output_file}/${DATASET} \
         --overwrite_output_dir \
         --max_tokens 8192 
     
