@@ -102,7 +102,7 @@ def search_iterator(args, qid_query_list, excluded_ids, original_qid=None):
         }
         
         try:
-            resp = requests.post(argsBatch_SERVER_URL, json=payload) # , timeout=300
+            resp = requests.post(args.Batch_SERVER_URL, json=payload) # , timeout=300
             resp.raise_for_status()  # Check HTTP errors
             
             # Try to parse JSON
@@ -320,7 +320,7 @@ def run_parallel_reasoning_agent(args, qid, original_query, initial_docs_set, di
     return paths
 
 
-def main()
+def main():
  
     parser = argparse.ArgumentParser(description='DIVER-QExpand Parallel Version.')
     parser.add_argument('--dataset_source', type=str, default='data/BRIGHT')
