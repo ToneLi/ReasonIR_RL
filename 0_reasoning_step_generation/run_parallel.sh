@@ -13,7 +13,7 @@ part=2
 DATASET_SOURCE="data/BRIGHT"
 EXAMPLES_PATH="data_making/split_datasets/part_%s"%(str(part))
 Output_file="output_parallel_part_%s"%(str(part))
-#  (2) need to change，   search server IP   
+#  (2) need to change,   search server IP   
 BATCH_SERVER_URL="http://172.16.34.22:8505/batch_retrieve"
 #  (3) need to change   search server IP
 TRUNCATE_URL="http://172.16.34.22:8505/truncate"
