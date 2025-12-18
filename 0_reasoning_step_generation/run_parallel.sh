@@ -4,19 +4,24 @@ tasks=("biology" "earth_science" "economics" "psychology" "robotics" "stackoverf
 
 KEEP_PASSAGE_NUM=3
 NUM_HITS=100
+NUM_PATHS=8
+MAX_ROUNDS=5
 
+#  (1) need to change
 part=2
+
 DATASET_SOURCE="data/BRIGHT"
 EXAMPLES_PATH="data_making/split_datasets/part_%s"%(str(part))
 Output_file="output_parallel_part_%s"%(str(part))
-
+#  (2) need to change
 BATCH_SERVER_URL="http://172.16.34.22:8506/batch_retrieve"
+#  (3) need to change
 TRUNCATE_URL="http://172.16.34.22:8505/truncate"
+#  (4) need to change
 SUMMARIZATION_BATCH_URL="http://localhost:8502/summrization"
 
 
-NUM_PATHS=8
-MAX_ROUNDS=5
+
 
 LOGFILE="run_time_log_parallel.txt"
 echo "==== Parallel Run started at $(date) ====" >> $LOGFILE
