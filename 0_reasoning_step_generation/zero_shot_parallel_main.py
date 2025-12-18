@@ -217,7 +217,7 @@ def run_parallel_reasoning_agent(args, qid, original_query, initial_docs_set, di
     """
     # Step 1: Initialize 16 paths
     paths = []
-    for i in range(NUM_PATHS):
+    for i in range(args.NUM_PATHS):
         path = ParallelReasoningPath(
             path_id=f"{qid}_path_{i}",
             qid=qid,
