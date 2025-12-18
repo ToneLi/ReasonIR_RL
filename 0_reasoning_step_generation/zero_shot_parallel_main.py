@@ -228,7 +228,7 @@ def run_parallel_reasoning_agent(args, qid, original_query, initial_docs_set, di
         path.last_top_k_passages = initial_docs_set
         paths.append(path)
     
-    print(f"\n[Query {qid}] Initialize {NUM_PATHS} parallel paths")
+    print(f"\n[Query {qid}] Initialize {args.NUM_PATHS} parallel paths")
     
     # Step 2: Iterative processing
     for round_num in range(MAX_ROUNDS):
@@ -241,7 +241,7 @@ def run_parallel_reasoning_agent(args, qid, original_query, initial_docs_set, di
             print(f"[Query {qid}] All paths completed, early termination")
             break
         
-        print(f"[Query {qid}] Number of active paths: {len(active_paths)}/{NUM_PATHS}")
+        print(f"[Query {qid}] Number of active paths: {len(active_paths)}/{args.NUM_PATHS}")
         
         # 2.2 Batch generation: send all active paths' contexts to LLM
         batch_contexts = [p.running_context for p in active_paths]
@@ -313,9 +313,9 @@ def run_parallel_reasoning_agent(args, qid, original_query, initial_docs_set, di
     
     # Step 3: Return final results of all paths
     print(f"\n[Query {qid}] Completed all rounds")
-    print(f"  Satisfied paths: {sum(1 for p in paths if p.status == 'satisfied')}/{NUM_PATHS}")
-    print(f"  Active paths: {sum(1 for p in paths if p.status == 'active')}/{NUM_PATHS}")
-    print(f"  Unknown paths: {sum(1 for p in paths if p.status == 'unknown')}/{NUM_PATHS}")
+    print(f"  Satisfied paths: {sum(1 for p in paths if p.status == 'satisfied')}/{args.NUM_PATHS}")
+    print(f"  Active paths: {sum(1 for p in paths if p.status == 'active')}/{args.NUM_PATHS}")
+    print(f"  Unknown paths: {sum(1 for p in paths if p.status == 'unknown')}/{args.NUM_PATHS}")
     
     return paths
 
