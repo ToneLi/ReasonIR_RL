@@ -8,11 +8,11 @@ NUM_PATHS=8
 MAX_ROUNDS=5
 
 #  (1) need to change
-part=2
+PART=2
 
 DATASET_SOURCE="data/BRIGHT"
 EXAMPLES_PATH="data_making/split_datasets/part_%s"%(str(part))
-Output_file="output_parallel_part_%s"%(str(part))
+OUTPUT_FILE="output_parallel_part_%s"%(str(part))
 #  (2) need to change,   search server IP   
 BATCH_SERVER_URL="http://172.16.34.22:8505/batch_retrieve"
 #  (3) need to change   search server IP
@@ -44,7 +44,7 @@ for DATASET in "${tasks[@]}"; do
         --summarization_batch_URL ${SUMMARIZATION_BATCH_URL} \
         --NUM_PATHS ${NUM_PATHS} \
         --MAX_ROUNDS ${MAX_ROUNDS} \
-        --output_dir ./${Output_file}/${DATASET} \
+        --output_dir ./${OUTPUT_FILE}/${DATASET} \
         --overwrite_output_dir \
         --max_tokens 8192 
     
