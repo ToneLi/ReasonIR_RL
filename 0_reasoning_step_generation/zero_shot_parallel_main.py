@@ -231,8 +231,8 @@ def run_parallel_reasoning_agent(args, qid, original_query, initial_docs_set, di
     print(f"\n[Query {qid}] Initialize {args.NUM_PATHS} parallel paths")
     
     # Step 2: Iterative processing
-    for round_num in range(MAX_ROUNDS):
-        print(f"\n[Query {qid}] ===== Round {round_num + 1}/{MAX_ROUNDS} =====")
+    for round_num in range(args.MAX_ROUNDS):
+        print(f"\n[Query {qid}] ===== Round {round_num + 1}/{args.MAX_ROUNDS} =====")
         
         # 2.1 Collect all active paths
         active_paths = [p for p in paths if p.status == "active"]
