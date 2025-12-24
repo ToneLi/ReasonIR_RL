@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# Batch 脚本：运行 retriever_script.sh 8 次，不同的 ROUND 和 GPU
-# 同时后台运行所有任务
+ 
 
-SCRIPT_DIR="/mnt/data_218/home1/Cool_Chen/0_reasonIR_bright/0_evaluation_upload/bright/Diver/Retriever"
-SCRIPT="${SCRIPT_DIR}/retriever_script.sh"
+SCRIPT="$retriever_script.sh"
 PART=3
 
 # GPU 分配：Round -> GPU
