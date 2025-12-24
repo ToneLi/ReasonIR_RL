@@ -59,7 +59,8 @@ CUDA_VISIBLE_DEVICES=5 uvicorn search_host_with_BM25:app --host 0.0.0.0 --port 8
 bash run_parallel.sh
 ```
 
-## Step 2
+## Step 2: 
+####  Step 2.1:   extract the expanded query
 Go to 1_30B_output_organize and run bash_organize.sh.
 The purpose of this step is to extract the expanded queries for each original query. Each query has 8 trajectories, and each trajectory provides its own expanded query.
 
@@ -83,7 +84,7 @@ declare -a outputs=(
 )
 
 ```
-####    Get the NDCG value
+#### Step 2.2:  Get the NDCG value for each query
 
 Download and unzip doc_ids.zip and place the extracted files in
 0_reasoning_step_generation/cache/cache_diver-retriever.
@@ -96,4 +97,9 @@ bash batch_run_3_rounds.sh
 bash batch_run_4_rounds.sh
 bash batch_run_5_rounds.sh
 
+```
+#### Step 2.3:  Compute the NDCG scores for each query across 8 retrieval rounds.
+
+```
+go to 3_rank_nbcg_for_round_query and run bash batch_score.sh
 ```
