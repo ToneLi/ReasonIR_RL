@@ -58,5 +58,21 @@ CUDA_VISIBLE_DEVICES=5 uvicorn search_host_with_BM25:app --host 0.0.0.0 --port 8
 bash run_parallel.sh
 ```
 
+## Step 2
+
+```
+                dic_["task"]=  task_match.group(1)
+                all_dd.append(task_match.group(1))
+                dic_["qid"] =qid_match.group(1)
+                dic_["query"]=query
+                dic_["input_docs"]=input_docs
+                dic_["path_id"] =path_id_match.group(1)
+                
+                dic_["status"] =status_match.group(1)
+                dic_["rounds"] =rounds_match.group(1)
+                dic_["trajectory"] =raw_output
+                dic_["new_query"] =new_query.replace("Original query (included as required)","")
+
+```
 
 
