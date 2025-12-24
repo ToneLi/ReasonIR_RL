@@ -11,17 +11,18 @@ echo "================================"
 
 # Define input/output pairs
 declare -a roots=(
-    "/mnt/data_218/home1/Cool_Chen/0_reasonIR_bright/0_reasoning_step_generation_part12/output_parallel_part_12"
-    "/mnt/data_218/home1/Cool_Chen/0_reasonIR_bright/0_reasoning_step_generation_part11/output_parallel_part_11"
-    "/mnt/data_218/home1/Cool_Chen/0_reasonIR_bright/0_reasoning_step_generation_part10/output_parallel_part_10"
-    # "/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/output_parallel_part1"
+    "./output/diver_output_2"
+    "./output/diver_output_3"
+    "./output/diver_output_4"
+    "./output/diver_output_5"
 )
 
 declare -a outputs=(
     # "30B_LLM_dynamic_c.jsonl"
-    "30B_LLM_dynamic_8_rounds_output_part12.jsonl"
-    "30B_LLM_dynamic_8_rounds_output_part11.jsonl"
-    "30B_LLM_dynamic_8_rounds_output_part10.jsonl"
+    "30B_LLM_dynamic_8_rounds_output_part2.jsonl"
+    "30B_LLM_dynamic_8_rounds_output_part3.jsonl"
+    "30B_LLM_dynamic_8_rounds_output_part4.jsonl"
+      "30B_LLM_dynamic_8_rounds_output_part5.jsonl"
 )
 
 # Process each pair
