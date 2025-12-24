@@ -5,7 +5,7 @@
 
 SCRIPT_DIR="/mnt/data_218/home1/Cool_Chen/0_reasonIR_bright/0_evaluation_upload/bright/Diver/Retriever"
 SCRIPT="${SCRIPT_DIR}/retriever_script.sh"
-PART=11
+PART=3
 
 # GPU 分配：Round -> GPU
 declare -a GPUS=(1 1 2 3 4 5 6 7)
