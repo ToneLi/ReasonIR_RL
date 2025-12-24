@@ -83,5 +83,8 @@ declare -a outputs=(
 )
 
 ```
+####
 
-
+Unzip doc_id.zip and place the extracted files in
+0_reasoning_step_generation/cache/cache_diver-retriever.
+Make sure that doc_emb and doc_id are located in the same directory.
