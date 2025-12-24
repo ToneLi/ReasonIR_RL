@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Batch generate score statistics for each part
-cd /home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/0_evaluation/bright/Diver/Retriever
+#cd /home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/0_evaluation/bright/Diver/Retriever
 
-BASE_PATH="/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/0_evaluation/bright/Diver/Retriever/output"
+BASE_PATH="../2_Retriever/output"
 
 echo "=========================================="
 echo "Start generating score statistics for each part"
