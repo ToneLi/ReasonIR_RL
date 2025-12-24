@@ -101,5 +101,9 @@ bash batch_run_5_rounds.sh
 #### Step 2.3:  Compute the NDCG scores for each query across 8 retrieval rounds.
 
 ```
-go to 3_rank_nbcg_for_round_query and run bash batch_score.sh
+go to 3_rank_nbcg_for_round_query
+
+run bash batch_score.sh
+run batch_filter.sh
+python progress
 ```
