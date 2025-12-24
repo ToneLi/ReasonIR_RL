@@ -11,10 +11,10 @@ echo "================================"
 
 # Define input/output pairs
 declare -a roots=(
-    "./output/diver_output_2"
-    "./output/diver_output_3"
-    "./output/diver_output_4"
-    "./output/diver_output_5"
+    "./0_reasoning_step_generation/output/diver_output_2"
+    "./0_reasoning_step_generation/output/diver_output_3"
+    "./0_reasoning_step_generation/output/diver_output_4"
+    "./0_reasoning_step_generation/output/diver_output_5"
 )
 
 declare -a outputs=(
