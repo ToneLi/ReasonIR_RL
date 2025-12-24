@@ -118,9 +118,10 @@ def trajectory_to_multiturn(query: str, input_docs: str, trajectory_text: str) -
 # ============================================
 
 input_files = [
-    "30B_LLM_part12_pos.jsonl",
-    "30B_LLM_part11_pos.jsonl",
-    "30B_LLM_part10_pos.jsonl"
+    "30B_LLM_part2_pos.jsonl",
+    "30B_LLM_part3_pos.jsonl",
+    "30B_LLM_part4_pos.jsonl"
+    "30B_LLM_part5_pos.jsonl"
 ]
 
 # Open train and dev files
