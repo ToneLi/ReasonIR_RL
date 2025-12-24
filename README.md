@@ -60,24 +60,27 @@ bash run_parallel.sh
 ```
 
 ## Step 2
-Go to 1_30B_output_organize and run organize_output.py.
+Go to 1_30B_output_organize and run bash_organize.sh.
 The purpose of this step is to extract the expanded queries for each original query. Each query has 8 trajectories, and each trajectory provides its own expanded query.
 
 This step is used to compute the NDCG score for each trajectory. Specifically, NDCG is calculated between the original query and the expanded query generated in each trajectory, allowing us to evaluate the retrieval quality of different trajectories.
 
 The output will be the dict for each part, 
 ```
-                dic_["task"]=  task_match.group(1)
-                all_dd.append(task_match.group(1))
-                dic_["qid"] =qid_match.group(1)
-                dic_["query"]=query
-                dic_["input_docs"]=input_docs
-                dic_["path_id"] =path_id_match.group(1)
-                
-                dic_["status"] =status_match.group(1)
-                dic_["rounds"] =rounds_match.group(1)
-                dic_["trajectory"] =raw_output
-                dic_["new_query"] =new_query.replace("Original query (included as required)","")
+declare -a roots=(
+    "./0_reasoning_step_generation/output/diver_output_2"
+    "./0_reasoning_step_generation/output/diver_output_3"
+    "./0_reasoning_step_generation/output/diver_output_4"
+    "./0_reasoning_step_generation/output/diver_output_5"
+)
+
+declare -a outputs=(
+    # "30B_LLM_dynamic_c.jsonl"
+    "30B_LLM_dynamic_8_rounds_output_part2.jsonl"
+    "30B_LLM_dynamic_8_rounds_output_part3.jsonl"
+    "30B_LLM_dynamic_8_rounds_output_part4.jsonl"
+      "30B_LLM_dynamic_8_rounds_output_part5.jsonl"
+)
 
 ```
 
