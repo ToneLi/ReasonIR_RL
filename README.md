@@ -83,8 +83,17 @@ declare -a outputs=(
 )
 
 ```
-####  data propare
+####    Get the NDCG value
 
 Download and unzip doc_ids.zip and place the extracted files in
 0_reasoning_step_generation/cache/cache_diver-retriever.
 Make sure that doc_emb and doc_id are located in the same directory.
+
+Navigate to 2_Retriever and run the script.
+```
+bash batch_run_2_rounds.sh
+bash batch_run_3_rounds.sh
+bash batch_run_4_rounds.sh
+bash batch_run_5_rounds.sh
+
+```
