@@ -4,8 +4,6 @@
 # Requires: filters.py to be in the current directory
 # Processes parts 2, 3, 4, 5 and generates filtered positive trajectory files
 
-BASE_DIR="/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/0_evaluation/bright/Diver/Retriever"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "=========================================="
 echo "Batch Filter - Processing Multiple Parts"
@@ -15,9 +13,9 @@ for part in 2 3 4 5; do
     echo ""
     echo "Processing part_$part..."
     
-    score_file="$BASE_DIR/results_sorted_part_${part}_path_score.json"
+    score_file="results_sorted_part_${part}_path_score.json"
     input_file="$BASE_DIR/30B_LLM_dynamic_8_rounds_oupput_part${part}.jsonl"
-    output_file="$SCRIPT_DIR/30B_LLM_part${part}_pos.jsonl"
+    output_file="30B_LLM_part${part}_pos.jsonl"
     
     # Check if score file exists
     if [ ! -f "$score_file" ]; then
