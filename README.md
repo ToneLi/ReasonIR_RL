@@ -11,6 +11,7 @@ flash attention (2.6.0),
 
 
 # ReasonIR_RL
+## Step 1
 ###
 Aim: Generate reasoning paths for each question in data_making/split_datasets. Each file (e.g., Part 1) in this directory contains around 2,000 questions across 11 tasks (e.g., AoPS). Therefore, each part corresponds to approximately 2,000 questions, and we need reasoning paths for at least 8,000 questions in total. I am running Part 1, so you can run Parts 2, 3, 4, 5, 6, and 7.
 Please only change the following parameters in run_parallel.sh:
@@ -59,7 +60,12 @@ bash run_parallel.sh
 ```
 
 ## Step 2
+Go to 1_30B_output_organize and run organize_output.py.
+The purpose of this step is to extract the expanded queries for each original query. Each query has 8 trajectories, and each trajectory provides its own expanded query.
 
+This step is used to compute the NDCG score for each trajectory. Specifically, NDCG is calculated between the original query and the expanded query generated in each trajectory, allowing us to evaluate the retrieval quality of different trajectories.
+
+The output will be the dict for each part, 
 ```
                 dic_["task"]=  task_match.group(1)
                 all_dd.append(task_match.group(1))
