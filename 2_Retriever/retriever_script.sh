@@ -37,7 +37,7 @@ BS=-1
 
 path="../0_reasoning_step_generation/data/BRIGHT/"
 examples_path="../0_reasoning_step_generation/data_making/split_datasets/part_${PART}/"
-generated_files="../1_30B_output_organize/30B_LLM_dynamic_8_rounds_oupput_part${PART}.jsonl"    
+generated_files="../1_30B_output_organize/30B_LLM_dynamic_8_rounds_output_part${PART}.jsonl"    
 
 output_dir="output/part_${PART}_${MODEL}_reasoning_round${ROUND}"
 dataset_source="../0_reasoning_step_generation/data/BRIGHT/"
