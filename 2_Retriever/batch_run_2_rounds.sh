@@ -8,7 +8,7 @@ SCRIPT="$retriever_script.sh"
 PART=2
 
 # GPU 分配：Round -> GPU
-declare -a GPUS=(1 1 2 3 4 5 6 7)
+declare -a GPUS=(0 0 1 1 2 2 3 3)
 
 echo "Starting batch run for 8 rounds..."
 echo "=================================="
