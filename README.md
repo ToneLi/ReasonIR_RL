@@ -8,6 +8,7 @@ cuda 12.4
 flash attention (2.6.0),
 
 pip install sentence_transformers
+pip install torch metrics
 ```
 
 
