@@ -3,7 +3,7 @@
 # Batch 脚本：运行 retriever_script.sh 8 次，不同的 ROUND 和 GPU
 # 同时后台运行所有任务
 
-SCRIPT="$retriever_script.sh"
+SCRIPT="retriever_script.sh"
 PART=5
 
 # GPU 分配：Round -> GPU
