@@ -4,7 +4,7 @@
 # 同时后台运行所有任务
 
 
-SCRIPT="$retriever_script.sh"
+SCRIPT="retriever_script.sh"
 PART=2
 
 # GPU 分配：Round -> GPU
