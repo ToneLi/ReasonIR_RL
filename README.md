@@ -5,7 +5,9 @@ cuda 12.9
 flash attention (2.7.0),   
 
 cuda 12.4
-flash attention (2.6.0),   
+flash attention (2.6.0),
+
+pip install sentence_transformers
 ```
 
 
