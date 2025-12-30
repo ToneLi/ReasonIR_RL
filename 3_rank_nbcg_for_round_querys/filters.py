@@ -19,7 +19,7 @@ def get_scores(score_file):
             
             good_round = []
             for j in range(len(scores)):
-                if scores[j] > 0.5:
+                if scores[j] >=1:
                     good_round.append((rounds[j], scores[j]))
             if len(good_round) != 0:
                 dic_[id_] = good_round
@@ -64,8 +64,8 @@ def main():
                 if qid in qid_round_number:
                     round_nub = qid_round_number[qid]
                     
-                    if len(round_nub) > 4:
-                        round_nub = round_nub[:4]
+                    if len(round_nub) >=2:
+                        round_nub = round_nub[:2]
                     
                     rouds = {}
                     for tup in round_nub:
