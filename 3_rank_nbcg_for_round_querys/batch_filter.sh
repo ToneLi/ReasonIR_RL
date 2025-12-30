@@ -14,7 +14,7 @@ for part in 2 3 4 5; do
     echo "Processing part_$part..."
     
     score_file="results_sorted_part_${part}_path_score.json"
-    input_file="../2_Retriever/30B_LLM_dynamic_8_rounds_oupput_part${part}.jsonl"
+    input_file="../1_30B_output_organize/30B_LLM_dynamic_8_rounds_output_part${part}.jsonl"
     output_file="30B_LLM_part${part}_pos.jsonl"
     
     # Check if score file exists
