@@ -120,4 +120,4 @@ pip install unsloth==2025.12.8
 pip install wandb
 ```
 
-put [data](https://drive.google.com/drive/folders/1RkP1XhzfsRe5GsgSbYkD7Uc80S_McTLU?usp=drive_link)
+put [data](https://drive.google.com/drive/folders/1RkP1XhzfsRe5GsgSbYkD7Uc80S_McTLU?usp=drive_link)  into 4_sft_training
