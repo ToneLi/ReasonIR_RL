@@ -116,6 +116,7 @@ python progress
 
 
 ```
+conda activate diver
 pip install unsloth==2025.12.8
 pip install wandb
 ```
