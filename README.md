@@ -110,3 +110,14 @@ run bash batch_score.sh
 run batch_filter.sh
 python progress
 ```
+
+
+### Step3
+
+
+```
+pip install unsloth==2025.12.8
+pip install wandb
+```
+
+put [data](https://drive.google.com/drive/folders/1RkP1XhzfsRe5GsgSbYkD7Uc80S_McTLU?usp=drive_link)
