@@ -263,7 +263,7 @@ def parse_args():
     parser.add_argument("--logging_steps", type=int, default=50)
     parser.add_argument("--save_steps", type=int, default=500)
     parser.add_argument("--eval_steps", type=int, default=500)
-    parser.add_argument("--save_total_limit", type=int, default=3)
+    parser.add_argument("--save_total_limit", type=int, default=2)
     parser.add_argument("--report_to", type=str, default="wandb", help="Logging platform (e.g., 'wandb', 'tensorboard', 'none')")
     parser.add_argument("--save_strategy", type=str, default="epoch", help="Save strategy: 'steps' or 'epoch'")
     parser.add_argument("--wandb_project", type=str, default="sft-training", help="Wandb project name")
