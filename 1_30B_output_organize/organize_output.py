@@ -4,15 +4,15 @@ import re
 import sys
 import argparse
 
-def extract_last_summary(text,running_context):
+def extract_last_summary(text,raw_input):
     """?????? <summary> ... </summary> ???"""
     matches = re.findall(r"<summary>(.*?)<information>", text, flags=re.DOTALL)
     if matches:
         source_query_matches=re.findall(r"<query>(.*?)</query>", running_context, flags=re.DOTALL)[-1]
         return "summary", source_query_matches+","+matches[-1].strip()#len(matches)
     else:
-        source_query_matches=re.findall(r"<query>(.*?)</query>", running_context, flags=re.DOTALL)[-1]
-        matches = re.findall(r"<information>(.*?)</information>", running_context, flags=re.DOTALL)
+        source_query_matches=re.findall(r"<query>(.*?)</query>", raw_input, flags=re.DOTALL)[-1]
+        matches = re.findall(r"<information>(.*?)</information>", raw_input, flags=re.DOTALL)
         return "source", source_query_matches+","+matches[-1].strip()
 
 
@@ -59,6 +59,7 @@ def main():
             
               
                 raw_output = running_context.split("MODEL OUTPUT BEGINS")[1]
+                raw_input=running_context.split("MODEL OUTPUT BEGINS")[0]
                 question_inform_input=running_context.split("MODEL OUTPUT BEGINS")[0].split("INPUT BEGINS")[1]
                 question_match=re.search(r"<query>(.*?)</query>",question_inform_input,re.DOTALL)
                 query=question_match.group(1)
@@ -68,7 +69,7 @@ def main():
 
 
 
-                tag,new_query = extract_last_summary(raw_output,running_context)
+                tag,new_query = extract_last_summary(raw_output,raw_input)
               
                 if tag=="summary":
                         hit =hit+1
