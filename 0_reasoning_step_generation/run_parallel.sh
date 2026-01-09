@@ -11,7 +11,8 @@ MAX_ROUNDS=5
 
 PART=12
 DATASET_SOURCE="../data/BRIGHT"
-EXAMPLES_PATH="../data_making/split_datasets/part_${PART}"
+#EXAMPLES_PATH="../data_making/split_datasets/part_${PART}"
+EXAMPLES_PATH="../data/BRIGHT/excamples"
 OUTPUT_FILE="output_parallel_part_${PART}"
 #  (2) need to change,   search server IP   
 BATCH_SERVER_URL="http://172.16.34.22:8505/batch_retrieve"
