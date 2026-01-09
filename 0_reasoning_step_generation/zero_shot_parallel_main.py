@@ -353,6 +353,8 @@ def main():
     # data loading
     # examples_path="/home/mingchen/3_Query_rewrite_RL/3_Diver-main2/zero_test_parallel/data_making/split_datasets/part_0"
     
+    #examples = load_dataset("parquet", data_files=os.path.join(
+       # args.examples_path, f"{args.task}-00000-of-00001.parquet"))["train"]
     examples = load_dataset("parquet", data_files=os.path.join(
         args.examples_path, f"{args.task}_examples.parquet"))["train"]
     org_qid_query_list = [(data['id'], data['query']) for data in examples]
