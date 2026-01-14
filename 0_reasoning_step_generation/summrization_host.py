@@ -7,6 +7,11 @@ from fastapi import FastAPI
 app = FastAPI()
 
 generation_model="Qwen/Qwen3-30B-A3B-Instruct-2507"
+Qwen/Qwen3-30B-A3B-Instruct-2507   
+Qwen/Qwen3-4B-Thinking-2507
+deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
+deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
+
 #generation_model="/data/home_beta/mingchen/3_DeepRetrieval/cold_start/output_dir/qwen3b_merged"
 #"/home/mingchen/3_Query_rewrite_RL/3_Diver-main/0_model_train/sft_output_4b_Thinking_pos1/final"
 # search_api = VectorSearchInterface(args, doc_ids, documents)
@@ -35,4 +40,5 @@ def summrization(req: dict):
 
 
     return {"response_list":response_list}
+
 
