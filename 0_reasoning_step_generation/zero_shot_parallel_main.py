@@ -194,7 +194,8 @@ class ParallelReasoningPath:
             filtered_passages.append(passage)
             if len(filtered_passages) >= keep_passage_num:
                 break
-        
+
+        #retrieved_docs = docs[:keep_passage_num]
         retrieved_docs = filtered_passages[:keep_passage_num]
         info_block = "<information>\n" + ", ".join(retrieved_docs) + "\n</information>"
         self.running_context += info_block
