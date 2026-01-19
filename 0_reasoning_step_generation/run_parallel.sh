@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tasks=("biology" "earth_science" "economics" "psychology" "robotics" "stackoverflow"  "sustainable_living" "leetcode" "pony" "aops" "theoremqa_theorems")
+tasks=("biology" "earth_science" "economics" "psychology" "robotics" "stackoverflow"  "sustainable_living" "leetcode" "pony" "aops" "theoremqa_theorems" "theoremqa_questions")
 
 KEEP_PASSAGE_NUM=3
 NUM_HITS=100
