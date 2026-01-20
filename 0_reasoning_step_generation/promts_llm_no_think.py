@@ -51,7 +51,7 @@ def get_prompt(method, query, documents_block):
     ===================================================
     
     <reason> ... </reason>
-	--This is a simple question. No document evaluation, justification, or continuation decision is required. Answer it directly.
+	--Evaluate whether the current documents address the original user query. Answer it directly.
     - 5–10 words.
     
     <summary> ... </summary>
