@@ -51,8 +51,8 @@ def get_prompt(method, query, documents_block):
     ===================================================
     
     <reason> ... </reason>
-	--Evaluate whether the current documents address the original user query. Answer it directly.
-    - 5–10 words.
+	--Do the documents answer the user query? Output only: STOP (satisfied) or CONTINUE (not satisfied). No reasoning. No explanation.
+    --1–5 words.
     
     <summary> ... </summary>
     - Produce this ONLY when documents are insufficient.
@@ -103,7 +103,7 @@ def get_prompt(method, query, documents_block):
     </information>
 
     <reason>
-    -This is a simple question. No document evaluation, justification, or continuation decision is required. Answer it directly. Not satisfy
+    ---Do the documents answer the user query? Output only: STOP (satisfied) or CONTINUE (not satisfied). No reasoning. No explanation. CONTINUE (not satisfied).
     </reason>
 
     <summary>
@@ -144,7 +144,7 @@ def get_prompt(method, query, documents_block):
     </information>
 
     <reason>
-    This is a simple question. No document evaluation, justification, or continuation decision is required. Answer it directly. satisfy
+   ---Do the documents answer the user query? Output only: STOP or CONTINUE. No reasoning. No explanation. STOP (satisfied).
     </reason> 
     
     <satisfy> 
