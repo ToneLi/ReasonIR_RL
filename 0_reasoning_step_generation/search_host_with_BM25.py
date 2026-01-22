@@ -281,11 +281,12 @@ class VectorSearchInterface(object):
         # print("=======self.model",self.model)
         query_emb = []
         with torch.inference_mode():
-            for q in query_texts:
-                # print("=---------subq",q)
-                query_emb.append(self.model.encode_query(q))
+            # for q in query_texts:
+            #     # print("=---------subq",q)
+            #     query_emb.append(self.model.encode_query(q))
+            query_emb = self.model.encode_query_batch(query_texts)
 
-        query_emb = np.array(query_emb)
+        # query_emb = np.array(query_emb)
         print("Shape of query emb", query_emb.shape)
         torch.cuda.empty_cache()
 
@@ -522,6 +523,7 @@ def batch_retrieve(req: dict):
     return {"scores": merged_score}
 
     #  diver:  wgt_dense = 1 , wgt_dense = 1  BM25:  wgt_dense = 0 , wgt_dense = 0
+
 
 
 
