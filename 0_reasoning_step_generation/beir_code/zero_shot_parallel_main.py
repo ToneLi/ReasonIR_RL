@@ -100,7 +100,14 @@ def search_iterator(args, qid_query_list, excluded_ids, original_qid=None):
             "excluded_ids": path_excluded_ids,
             "num_hits": args.num_hits,
         }
-        
+        qid_candiates_path = path = f"{args.dataset_source}/top100_doc_ids/{args.task}_top100_doc_ids.json"
+
+        qid_candiates_doc={}
+        with open(qid_candiates_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        for k, v in data.items():
+            qid_candiates_doc[k] = v
+            
         try:
             resp = requests.post(args.Batch_SERVER_URL, json=payload) # , timeout=300
             resp.raise_for_status()  # Check HTTP errors
@@ -117,7 +124,20 @@ def search_iterator(args, qid_query_list, excluded_ids, original_qid=None):
                 print(f"Last 500 characters of response:\n{resp.text[-500:]}")
                 raise
             
-            id_doc_scores = data["scores"]
+            id_doc_scores_before_filter = data["scores"]
+            id_doc_scores = {}
+            for qid, doc_score in id_doc_scores_before_filter.items():
+            
+                candiate_doc=qid_candiates_doc[qid]
+                filtered_scores = {
+                    docid: score
+                    for docid, score in doc_score.items()
+                    if docid in candiate_doc    
+                }
+
+                id_doc_scores[qid] = filtered_scores
+
+            
             
             for qid, docs_score in id_doc_scores.items():
                 final_scores[qid] = docs_score
