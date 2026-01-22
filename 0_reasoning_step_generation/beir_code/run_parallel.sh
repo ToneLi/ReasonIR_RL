@@ -3,16 +3,16 @@
 tasks = ( "dbpedia-entity" "fiqa" "nfcorpus" "scidocs" "scifact" "trec-covid" "webis-touche2020")
 KEEP_PASSAGE_NUM=3
 NUM_HITS=100
-NUM_PATHS=8
+NUM_PATHS=1
 MAX_ROUNDS=5
 
 #  (1) need to change
 
-PART=12
+ 
 DATASET_SOURCE="../data/Beir"
 #EXAMPLES_PATH="../data_making/split_datasets/part_${PART}"
-EXAMPLES_PATH="../data/BRIGHT/excamples"
-OUTPUT_FILE="output_parallel_part_${PART}"
+EXAMPLES_PATH="../data/Beir/excamples"
+OUTPUT_FILE="Beir_30_diver"
 #  (2) need to change,   search server IP   
 BATCH_SERVER_URL="http://172.16.34.22:8505/batch_retrieve"
 #  (3) need to change   search server IP
