@@ -1,7 +1,6 @@
 #!/bin/bash
 
-tasks=("biology" "earth_science" "economics" "psychology" "robotics" "stackoverflow"  "sustainable_living" "leetcode" "pony" "aops" "theoremqa_theorems" "theoremqa_questions")
-
+tasks = ( "dbpedia-entity" "fiqa" "nfcorpus" "scidocs" "scifact" "trec-covid" "webis-touche2020")
 KEEP_PASSAGE_NUM=3
 NUM_HITS=100
 NUM_PATHS=8
@@ -10,7 +9,7 @@ MAX_ROUNDS=5
 #  (1) need to change
 
 PART=12
-DATASET_SOURCE="../data/BRIGHT"
+DATASET_SOURCE="../data/Beir"
 #EXAMPLES_PATH="../data_making/split_datasets/part_${PART}"
 EXAMPLES_PATH="../data/BRIGHT/excamples"
 OUTPUT_FILE="output_parallel_part_${PART}"
