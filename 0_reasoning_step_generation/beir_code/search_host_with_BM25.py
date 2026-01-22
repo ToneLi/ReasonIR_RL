@@ -520,9 +520,10 @@ def batch_retrieve(req: dict):
     # print(wgt_dense)
     merged_score=merge_bm25_dense_score(bm25_scores, dense_scores, wgt_dense=wgt_dense)
     # print(merged_score)
-    return {"scores": merged_score}
+    return {"scores": bm25_scores}
 
     #  diver:  wgt_dense = 1 , wgt_dense = 1  BM25:  wgt_dense = 0 , wgt_dense = 0
+
 
 
 
