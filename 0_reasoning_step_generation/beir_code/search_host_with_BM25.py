@@ -333,31 +333,17 @@ dataset_source = 'data/BRIGHT'
 
 model_path = "AQ-MedAI/Diver-Retriever-4B"
 model_name = "diver-retriever"
-cache_dir = "cache/cache_diver-retriever"
+cache_dir = "cache/cache_diver-retriever_beir"
 
 model = Qwen3EmbeddingModel(model_path)
 
 TASK_SEARCH_API = {}
-TASKS = [
-    "biology",
-"earth_science",
-"economics",
-"psychology",
-"robotics",
-"stackoverflow",
-"sustainable_living",
-"leetcode",
-"pony",
-"aops",
-"theoremqa_questions",
-"theoremqa_theorems"
-
-]
+TASKS = [ "dbpedia-entity" ,"fiqa" ,"nfcorpus", "scidocs" ,"scifact", "trec-covid", "webis-touche2020"]
 
 Task_corpus_index={}
 for task in TASKS:
     excample_doc={}
-    docs_path = os.path.join(dataset_source, 'documents', f'{task}-00000-of-00001.parquet')
+    docs_path = os.path.join(dataset_source, 'documents', f'{task}-documents.parquet')
     doc_pairs = load_dataset("parquet", data_files=docs_path, cache_dir=cache_dir)["train"]
 
     doc_ids = []
@@ -480,7 +466,7 @@ def batch_retrieve(req: dict):
     excluded = req["excluded_ids"]
     num_hits = req["num_hits"]
 
-    dense_scores = search_api.do_retrieval_batch(q_id_list, q_text_list, excluded, num_hits)
+    #dense_scores = search_api.do_retrieval_batch(q_id_list, q_text_list, excluded, num_hits)
     # loop = asyncio.get_running_loop()
 
     # -----------------------------
@@ -513,16 +499,17 @@ def batch_retrieve(req: dict):
 
 
     # print("======bm25_scores",bm25_scores) #'induce_sleep/Adenosinetriphosphat_377_0.txt': 0.6855451906713346,
-    task=req["task"]
-    wgt_dense = 0.5 
-    if task in ["leetcode", "pony", "aops", "theoremqa_theorems", "theoremqa_questions"]:
-        wgt_dense = 0.7
-    # print(wgt_dense)
-    merged_score=merge_bm25_dense_score(bm25_scores, dense_scores, wgt_dense=wgt_dense)
-    # print(merged_score)
+    # task=req["task"]
+    # wgt_dense = 0.5 
+    # if task in ["leetcode", "pony", "aops", "theoremqa_theorems", "theoremqa_questions"]:
+    #     wgt_dense = 0.7
+    # # print(wgt_dense)
+    # merged_score=merge_bm25_dense_score(bm25_scores, dense_scores, wgt_dense=wgt_dense)
+    # # print(merged_score)
     return {"scores": bm25_scores}
 
     #  diver:  wgt_dense = 1 , wgt_dense = 1  BM25:  wgt_dense = 0 , wgt_dense = 0
+
 
 
 
