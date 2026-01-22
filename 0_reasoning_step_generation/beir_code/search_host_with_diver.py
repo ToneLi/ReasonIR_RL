@@ -329,7 +329,7 @@ def progressive_query_rewrite(
 
     return query, response_list, accumulated_query_expansions
 
-dataset_source = 'data/BRIGHT'
+dataset_source = 'data/Beir''
 
 model_path = "AQ-MedAI/Diver-Retriever-4B"
 model_name = "diver-retriever"
