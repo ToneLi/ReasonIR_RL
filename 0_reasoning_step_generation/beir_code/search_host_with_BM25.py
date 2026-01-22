@@ -329,7 +329,7 @@ def progressive_query_rewrite(
 
     return query, response_list, accumulated_query_expansions
 
-dataset_source = 'data/BRIGHT'
+dataset_source = 'data/Beir'
 
 model_path = "AQ-MedAI/Diver-Retriever-4B"
 model_name = "diver-retriever"
@@ -509,6 +509,7 @@ def batch_retrieve(req: dict):
     return {"scores": bm25_scores}
 
     #  diver:  wgt_dense = 1 , wgt_dense = 1  BM25:  wgt_dense = 0 , wgt_dense = 0
+
 
 
 
