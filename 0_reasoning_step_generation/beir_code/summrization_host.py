@@ -31,7 +31,7 @@ def summrization(req: dict):
         for prompt in user_prompt_list
     ]
 
-    response_list =  gen_fn(messages_batch, max_tokens=8192, temperature=1, top_p=1,top_k=-1, n=1) # 32768
+    response_list =  gen_fn(messages_batch, max_tokens=8192, temperature=0, top_p=1,top_k=-1, n=1) # 32768
     #  if in the inference
     # temperature=0
     
@@ -39,6 +39,7 @@ def summrization(req: dict):
 
 
     return {"response_list":response_list}
+
 
 
 
