@@ -104,9 +104,9 @@ def search_iterator(args, qid_query_list, excluded_ids, original_qid=None):
 
         qid_candiates_doc={}
         with open(qid_candiates_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-        for k, v in data.items():
-            qid_candiates_doc[k] = v
+            data = json.load(f)
+            for k, v in data.items():
+                qid_candiates_doc[k] = v
             
         try:
             resp = requests.post(args.Batch_SERVER_URL, json=payload) # , timeout=300
