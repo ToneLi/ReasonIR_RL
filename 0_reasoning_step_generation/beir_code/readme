@@ -1,0 +1,1 @@
+zero_shot_parallel_main.py, line 324 add path_qid = (path.path_id).replace("_path_0","")
