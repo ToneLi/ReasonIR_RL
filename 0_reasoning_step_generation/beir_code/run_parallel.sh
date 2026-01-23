@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tasks = ( "dbpedia-entity" "fiqa" "nfcorpus" "scidocs" "scifact" "trec-covid" "webis-touche2020")
+tasks=("dbpedia-entity" "fiqa" "nfcorpus" "scidocs" "scifact" "trec-covid" "webis-touche2020")
 KEEP_PASSAGE_NUM=3
 NUM_HITS=100
 NUM_PATHS=1
