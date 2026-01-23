@@ -1,2 +1,10 @@
 In zero_shot_parallel_main.py
 line 324  from path_qid = path.path_id  to  path_qid = (path.path_id).replace("_path_0","")
+
+
+107 indices
+
+with open(qid_candiates_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            for k, v in data.items():
+                qid_candiates_doc[k] = v
