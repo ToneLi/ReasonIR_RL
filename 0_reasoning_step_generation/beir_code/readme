@@ -12,3 +12,7 @@ with open(qid_candiates_path, 'r', encoding='utf-8') as f:
 
 
 356:  delete choices=["dbpedia-entity" "fiqa" "nfcorpus" "scidocs" "scifact" "trec-covid" "webis-touche2020"]
+
+
+line  377 378 :  examples = load_dataset("parquet", data_files=os.path.join(
+        args.examples_path, f"{args.task}-queries.parquet"))["train"]
