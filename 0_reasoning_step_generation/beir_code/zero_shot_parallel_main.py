@@ -127,7 +127,7 @@ def search_iterator(args, qid_query_list, excluded_ids, original_qid=None):
             id_doc_scores_before_filter = data["scores"]
             id_doc_scores = {}
             for qid, doc_score in id_doc_scores_before_filter.items():
-            
+                qid=qid.replace("_path_0","")
                 candiate_doc=qid_candiates_doc[qid]
                 filtered_scores = {
                     docid: score
