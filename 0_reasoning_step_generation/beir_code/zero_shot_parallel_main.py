@@ -321,7 +321,7 @@ def run_parallel_reasoning_agent(args, qid, original_query, initial_docs_set, di
             
             # 2.5 Assign retrieval results to respective paths
             for path in paths_need_retrieval:
-                path_qid = path.path_id
+                path_qid = (path.path_id).replace("_path_0","")
                 if path_qid in final_scores:
                     did_scores = final_scores[path_qid]
                     # Get all retrieved documents (not just top-k)
