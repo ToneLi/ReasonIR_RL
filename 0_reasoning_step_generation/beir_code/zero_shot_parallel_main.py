@@ -352,8 +352,7 @@ def main():
     parser.add_argument('--NUM_PATHS', type=int, default=8)
     parser.add_argument('--MAX_ROUNDS', type=int, default=5)
     
-    parser.add_argument('--task', type=str, required=True,
-                          choices=["dbpedia-entity" "fiqa" "nfcorpus" "scidocs" "scifact" "trec-covid" "webis-touche2020"])
+    parser.add_argument('--task', type=str, required=True)
     parser.add_argument('--cache_dir', type=str, default='cache')
     parser.add_argument('--num_hits', type=int, default=1000)
     parser.add_argument('--output_dir', type=str, required=True)
@@ -376,27 +375,36 @@ def main():
        # args.examples_path, f"{args.task}-00000-of-00001.parquet"))["train"]
     examples = load_dataset("parquet", data_files=os.path.join(
         args.examples_path, f"{args.task}-queries.parquet"))["train"]
-    org_qid_query_list = [(data['id'], data['query']) for data in examples]
+    
+    ids = examples["id"]
+    queries = examples["query"]
+    org_qid_query_list = list(zip(ids, queries))
+
+    # org_qid_query_list = [(data['id'], data['query']) for data in examples]
     print(f"Number of queries: {len(org_qid_query_list)}")
     
     # Prepare excluded_ids (parse from string format to list)
+    ids = examples["id"]
+    excluded_col = examples["excluded_ids"]
+
     excluded_ids = {}
-    for e in examples:
-        # Handle both string 'N/A' and list format
-        exc_ids = e['excluded_ids']
+
+    for qid, exc_ids in zip(ids, excluded_col):
         if isinstance(exc_ids, str):
-            # If it's a string like 'N/A', convert to list
-            exc_ids = [exc_ids] if exc_ids != 'N/A' else ['N/A']
-        excluded_ids[e['id']] = exc_ids
-    
+            exc_ids = [exc_ids] if exc_ids != "N/A" else ["N/A"]
+        excluded_ids[qid] = exc_ids
+
     # Load documents
-    docs_path = os.path.join(args.dataset_source, 'documents', f'{args.task}-00000-of-00001.parquet')
+    docs_path = os.path.join(args.dataset_source, 'documents', f'{args.task}-documents.parquet')
     doc_pairs = load_dataset("parquet", data_files=docs_path, cache_dir=args.cache_dir)["train"]
     
-    did2content = {}
-    for dp in doc_pairs:
-        did2content[dp['id']] = dp['content']
-    
+    # did2content = {}
+    # for dp in doc_pairs:
+    #     did2content[dp['id']] = dp['content']
+    ids = doc_pairs["id"]
+    contents = doc_pairs["content"]
+    did2content = dict(zip(ids, contents))
+
     # ========== Initialization Phase ==========
     print("\n========== Initialization Phase: Batch retrieve initial results ==========")
     final_all_scores = search_iterator(args, org_qid_query_list, excluded_ids)
