@@ -12,7 +12,7 @@ MAX_ROUNDS=5
 DATASET_SOURCE="../data/Beir"
 #EXAMPLES_PATH="../data_making/split_datasets/part_${PART}"
 EXAMPLES_PATH="../data/Beir/excamples"
-OUTPUT_FILE="Beir_30_diver"
+OUTPUT_FILE="Beir_30_diver"  # 30b_diver_beir, 
 #  (2) need to change,   search server IP   
 BATCH_SERVER_URL="http://172.16.34.22:8505/batch_retrieve"
 #  (3) need to change   search server IP
