@@ -375,7 +375,7 @@ def main():
     #examples = load_dataset("parquet", data_files=os.path.join(
        # args.examples_path, f"{args.task}-00000-of-00001.parquet"))["train"]
     examples = load_dataset("parquet", data_files=os.path.join(
-        args.examples_path, f"{args.task}_examples.parquet"))["train"]
+        args.examples_path, f"{args.task}-queries.parquet"))["train"]
     org_qid_query_list = [(data['id'], data['query']) for data in examples]
     print(f"Number of queries: {len(org_qid_query_list)}")
     
