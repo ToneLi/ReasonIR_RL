@@ -353,9 +353,7 @@ def main():
     parser.add_argument('--MAX_ROUNDS', type=int, default=5)
     
     parser.add_argument('--task', type=str, required=True,
-                        choices=['biology', 'earth_science', 'economics', 'pony', 'psychology', 'robotics',
-                                 'stackoverflow', 'sustainable_living', 'aops', 'leetcode', 'theoremqa_theorems',
-                                 'theoremqa_questions'])
+                          choices=["dbpedia-entity" "fiqa" "nfcorpus" "scidocs" "scifact" "trec-covid" "webis-touche2020"])
     parser.add_argument('--cache_dir', type=str, default='cache')
     parser.add_argument('--num_hits', type=int, default=1000)
     parser.add_argument('--output_dir', type=str, required=True)
