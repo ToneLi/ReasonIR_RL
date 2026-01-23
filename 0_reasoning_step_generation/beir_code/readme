@@ -8,3 +8,7 @@ with open(qid_candiates_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             for k, v in data.items():
                 qid_candiates_doc[k] = v
+
+
+
+356:  delete choices=["dbpedia-entity" "fiqa" "nfcorpus" "scidocs" "scifact" "trec-covid" "webis-touche2020"]
