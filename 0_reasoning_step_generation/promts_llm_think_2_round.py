@@ -24,6 +24,7 @@ def get_prompt(method, query, documents_block):
     ===================================================
     
     At every step, your output MUST be in  the following  format:
+    <reason> ... </reason>
     <summary> ... </summary>
     <information>
     ... next set of retrieved documents will appear here ...
@@ -32,7 +33,12 @@ def get_prompt(method, query, documents_block):
     ===================================================
     === DETAILS & REQUIREMENTS ========================
     ===================================================
-     
+    
+    <reason> ... </reason>
+    - Evaluate whether the current documents address the original user query.
+    - Describe what parts of the documents satisfy the query and what is still missing.
+    - 200–500 words.
+    
     <summary> ... </summary>
     - Produce this ONLY when documents are insufficient.
     - 500–2000 words.
@@ -67,9 +73,18 @@ def get_prompt(method, query, documents_block):
     Different organisms show phototaxis for different physiological reasons, some incidental and not tied to survival.
     </information>
 
+    <reason>
+    1. Do the current documents address the original query?
+    No. The provided information only explains proximate/ultimate causation and defines phototaxis at a very general level. It does not discuss why insects approach lights, why LEDs attract them, or whether heat association plays any role.
+    2. What parts partially satisfy the query?
+    The distinction between proximate and ultimate causation is relevant because the query asks whether insects evolved to associate light with heat (an ultimate explanation) or respond directly to light cues (a proximate explanation). The phototaxis definition also loosely connects to insect light-seeking behavior. However, these are only conceptual frameworks, not answers.
+    3. What is missing?
+    There is no discussion of insect visual physiology, wavelength sensitivity, or navigation mechanisms that might explain attraction to artificial lights. No evidence is provided concerning heat vs. light attraction or experiments comparing incandescent vs. LED lighting. The possibility of evolutionary “light-heat association” is also not addressed.
+    </reason>
+
     <summary>
     Original query (included as required):
-    Why are insects attracted to light? The article argues that heat is not the cause because LEDs emit almost no infrared yet still attract insects. Why does LED-attraction refute heat-seeking? Could insects have evolved to associate light with heat and “expect” heat even when LEDs provide none?
+    Why are insects attracted to light? The article argues heat is not the cause because LEDs emit almost no infrared yet still attract insects. Why does LED-attraction refute heat-seeking? Could insects have evolved to associate light with heat and “expect” heat even when LEDs provide none?
     Refined retrieval-focused summary:
     The current information gives only general definitions of proximate/ultimate causation and phototaxis, which cannot explain why insects approach artificial lights or whether heat plays a role. Further retrieval should focus on insect visual physiology (brightness, wavelength, UV sensitivity) and how artificial lights disrupt navigation systems. Evidence separating heat cues from light cues is needed, including whether insects approach heat sources without light and how thermoreceptors function across species.
     Retrieval should also include studies comparing insects’ responses to incandescent versus LED lights, especially work isolating heat, wavelength, and intensity to determine whether heat contributes meaningfully to attraction. On the evolutionary side, evidence is needed for hypotheses such as celestial navigation, sensory traps, and whether insects ever evolved any natural link between light cues and heat cues. Retrieval should clarify whether modern lighting creates an evolutionary mismatch rather than a heat-expectation mechanism.
@@ -96,6 +111,5 @@ def get_prompt(method, query, documents_block):
     ===================================================
     """
     }
-
 
     return user_prompts[method]
