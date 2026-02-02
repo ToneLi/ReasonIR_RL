@@ -1,8 +1,8 @@
 #!/bin/bash
 # Qwen/Qwen3-4B-Thinking-2507
 CUDA_VISIBLE_DEVICES=0 python unsloth_sft_trainer.py \
-  --train_file data/converted_multiturn_right_path_5000_train.jsonl \
-  --eval_file data/converted_multiturn_right_path_5000_dev.jsonl \
+  --train_file data/converted_multiturn_right_path_5000_train.jsonl \   ---to converted_5000_steps_train_all_multiturn.json
+  --eval_file data/converted_multiturn_right_path_5000_dev.jsonl \---to converted_5000_steps_dev_multiturn.json 
   --model_name_or_path Qwen/Qwen3-4B-Thinking-2507 \
   --output_dir ./sft_output_4b_5000_1 \
   --num_train_epochs 2 \
