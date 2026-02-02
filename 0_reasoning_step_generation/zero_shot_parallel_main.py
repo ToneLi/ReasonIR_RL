@@ -18,8 +18,8 @@ import pytrec_eval
 import aiohttp
 import asyncio
 #from promts_llm_think import get_prompt
-from  promts_llm_no_think  import get_prompt    #  实验三：No thinking model.
-
+#from  promts_llm_no_think  import get_prompt    #  实验三：No thinking model.
+from promts_llm_think_2_round import get_prompt   #   2026/2/1
 
 print("CUDA_VISIBLE_DEVICES:", os.environ.get("CUDA_VISIBLE_DEVICES"))
 
