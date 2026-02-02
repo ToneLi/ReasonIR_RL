@@ -1,18 +1,18 @@
 #!/bin/bash
 
 tasks=("biology" "earth_science" "economics" "psychology" "robotics" "stackoverflow"  "sustainable_living" "leetcode" "pony" "aops" "theoremqa_theorems" "theoremqa_questions")
-
+ #  2026/2/1   no  "theoremqa_questions" 
 KEEP_PASSAGE_NUM=3
 NUM_HITS=100
 NUM_PATHS=8
-MAX_ROUNDS=5
-
+MAX_ROUNDS= 5
+#MAX_ROUNDS=2      2026/2/1
 #  (1) need to change
 
 PART=12
 DATASET_SOURCE="../data/BRIGHT"
 #EXAMPLES_PATH="../data_making/split_datasets/part_${PART}"
-EXAMPLES_PATH="../data/BRIGHT/excamples"
+EXAMPLES_PATH="../data/BRIGHT/excamples"   #   "../data/BRIGHT/excamples"  --> ../data/task_parquet_path_5000_set_3734    2026/2/1
 OUTPUT_FILE="output_parallel_part_${PART}"
 #  (2) need to change,   search server IP   
 BATCH_SERVER_URL="http://172.16.34.22:8505/batch_retrieve"
