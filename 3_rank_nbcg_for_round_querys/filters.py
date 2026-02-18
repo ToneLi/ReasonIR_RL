@@ -18,11 +18,12 @@ def get_scores(score_file):
                 rounds.append(scores_rouds[i][0])
             
             good_round = []
-            for j in range(len(scores)):
-                if scores[j] >=1:
-                    good_round.append((rounds[j], scores[j]))
-            if len(good_round) != 0:
-                dic_[id_] = good_round
+            if len(scores)!=5:
+                for j in range(len(scores)):
+                    if scores[j] >=1:
+                        good_round.append((rounds[j], scores[j]))
+                if len(good_round) != 0:
+                    dic_[id_] = good_round
     return dic_
 
 
