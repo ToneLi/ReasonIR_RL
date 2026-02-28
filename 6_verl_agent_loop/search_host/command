@@ -1,0 +1,20 @@
+uvicorn search_host:app --host 0.0.0.0 --port 8505
+
+30b
+CUDA_VISIBLE_DEVICES=1 uvicorn search_host_with_diver:app --host 0.0.0.0 --port 8516
+
+CUDA_VISIBLE_DEVICES=1 uvicorn search_host_with_diverbm25:app --host 0.0.0.0 --port 8517
+
+ 
+
+CUDA_VISIBLE_DEVICES=5 uvicorn summrization_host_30:app --host 0.0.0.0 --port 8504
+
+
+4b: CUDA_VISIBLE_DEVICES=5 uvicorn summrization_host_4b:app --host 0.0.0.0 --port 8504
+4b: CUDA_VISIBLE_DEVICES=5 uvicorn search_host_with_BM25_for_4b:app --host 0.0.0.0 --port 8507
+
+4b:beir CUDA_VISIBLE_DEVICES=5 uvicorn search_host_with_BM25_beir:app --host 0.0.0.0 --port 8509
+CUDA_VISIBLE_DEVICES=5 uvicorn search_host_with_BM25_beir_test:app --host 0.0.0.0 --port 8510  
+
+CUDA_VISIBLE_DEVICES=3 uvicorn summrization_host_4b_2:app --host 0.0.0.0 --port 8508
+
