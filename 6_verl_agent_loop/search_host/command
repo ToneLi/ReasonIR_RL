@@ -1,2 +1,11 @@
 
 CUDA_VISIBLE_DEVICES=1 uvicorn search_host_with_diver:app --host 0.0.0.0 --port 8516
+
+
+
+need to change:
+dataset_source = '/home/mingchen/3_Query_rewrite_RL/3_Diver-main/data/BRIGHT'
+
+model_path = "AQ-MedAI/Diver-Retriever-4B"
+model_name = "diver-retriever"
+cache_dir = "/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/cache/cache_diver-retriever"
