@@ -70,8 +70,8 @@ CUDA_VISIBLE_DEVICES=0,1 python3 -m verl.trainer.main_ppo \
     trainer.total_training_steps=80 \
     trainer.default_local_dir=verl_checkpoints\
     trainer.test_freq=10\
-    data.train_files=/home/mingchen/6_verl_agent_loop/verl-main/data_progress/bright/part_48_49_50_rounds_train.parquet \
-    data.val_files=/home/mingchen/6_verl_agent_loop/verl-main/data_progress/bright/part_48_49_50_rounds_dev.parquet \
+    data.train_files=/home/mingchen/6_verl_agent_loop/verl-main/RL_train_data/bright/part_48_49_50_rounds_train.parquet \
+    data.val_files=/home/mingchen/6_verl_agent_loop/verl-main/RL_train_data/bright/part_48_49_50_rounds_dev.parquet \
     actor_rollout_ref.rollout.multi_turn.tool_config_path="$PROJECT_DIR/examples/sglang_multiturn/config/tool_config/bright_tool_config.yaml" \
     trainer.total_epochs=3 $@
 
