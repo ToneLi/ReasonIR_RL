@@ -122,3 +122,10 @@ pip install wandb
 ```
 
 put [data](https://drive.google.com/drive/folders/1RkP1XhzfsRe5GsgSbYkD7Uc80S_McTLU?usp=drive_link)  into 4_sft_training
+
+
+
+###  GRPO training
+```
+conda create -n verl python=3.12
+```
