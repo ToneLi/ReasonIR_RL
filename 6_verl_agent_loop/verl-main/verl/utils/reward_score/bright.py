@@ -1,0 +1,381 @@
+# Copyright 2024 Bytedance Ltd. and/or its affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+import re
+import time
+import requests
+from tqdm import tqdm
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import math
+_SOLUTION_CLIP_CHARS = 300
+
+# Default retrieval URL, kept consistent with bright_tool_config.yaml:
+# retrieval_service_url: ${oc.env:BRIGHT_RETRIEVAL_URL,"http://172.16.34.22:8516/batch_retrieve"}
+DEFAULT_BRIGHT_RETRIEVAL_URL = "http://172.16.34.22:8516/batch_retrieve"
+
+
+# def extract_solution(solution_str, method="strict"):
+#     assert method in ["strict", "flexible"]
+
+#     # Optimization: Regular expression matching on very long strings can be slow.
+#     # For math problems, the final answer is usually at the end.
+#     # We only match on the last 300 characters, which is a safe approximation for 300 tokens.
+#     if len(solution_str) > _SOLUTION_CLIP_CHARS:
+#         solution_str = solution_str[-_SOLUTION_CLIP_CHARS:]
+
+#     if method == "strict":
+#         # this also tests the formatting of the model
+#         solutions = re.findall("#### (\\-?[0-9\\.\\,]+)", solution_str)
+#         if len(solutions) == 0:
+#             final_answer = None
+#         else:
+#             # take the last solution
+#             final_answer = solutions[-1].replace(",", "").replace("$", "")
+#     elif method == "flexible":
+#         answer = re.findall("(\\-?[0-9\\.\\,]+)", solution_str)
+#         final_answer = None
+#         if len(answer) == 0:
+#             # no reward is there is no answer
+#             pass
+#         else:
+#             invalid_str = ["", "."]
+#             # find the last number that is not '.'
+#             for final_answer in reversed(answer):
+#                 if final_answer not in invalid_str:
+#                     break
+#     return final_answer
+
+
+
+def extract_steps(trajectory: str, max_steps: int = 5):
+    """Extract per-step info blocks from a trajectory string.
+
+    Each step is expected to be either:
+    1) <think>...</think> + <summary>...</summary> + <information>...</information>
+    2) <think>...</think> + <satisfy> yes </satisfy>
+    Returns a list of dicts with keys: reason, summary, information, satisfy.
+    """
+
+    pattern = re.compile(
+        r"<think>(?P<think>.*?)</think>(?:\\n|\s)*"  # whitespace or literal \n between tags
+        r"(?:"
+        r"<summary>(?P<summary1>.*?)</summary>\s*<information>(?P<info1>.*?)</information>"  # well-formed
+        r"|<summary>(?P<summary2>.*?)<information>(?P<info2>.*?)</information>"               # missing </summary>
+        r"|<satisfy>(?P<satisfy>.*?)</satisfy>"                                              # satisfy branch
+        r")",
+        flags=re.DOTALL,
+    )
+
+    steps = []
+    for match in pattern.finditer(trajectory):
+        groups = match.groupdict()
+        think = groups.get("think", "")
+        summary = groups.get("summary1") or groups.get("summary2")
+        information = groups.get("info1") or groups.get("info2")
+        satisfy = groups.get("satisfy")
+        steps.append(
+            {
+                "think": think.strip(),
+                "summary": summary.strip() if summary else None,
+                "information": information.strip() if information else None,
+                "satisfy": satisfy.strip() if satisfy else None,
+            }
+        )
+        if len(steps) >= max_steps:
+            break
+    return steps
+
+def extract_expand_query(sequences_str,input_docs,query):
+    """Extract the equation from the solution string."""
+    trajectory = "<think>"+sequences_str
+    # fw1.write("query"+input_docs+"\n")
+    # fw1.flush()
+    # with open("output_check_steps_trajectory.json", "a") as fw: 
+    #     fw.write(str(trajectory)+"\n")
+    #     fw.write("--------------------------"+"\n")
+    #     fw.flush()
+    steps = extract_steps(trajectory)
+    if len(steps) >= 1:
+        # Find the last step that has a summary (skip satisfy-only steps)
+        if steps[-1]["satisfy"] is not None and len(steps) >= 2:
+            # Last step is <satisfy>, use the second-to-last step's summary
+            target_step = steps[-2]
+        else:
+            # Last step has a summary (or is the only step)
+            target_step = steps[-1]
+
+        if target_step["summary"] is not None and len(target_step["summary"]) > 20:
+            new_query = query + " " + target_step["summary"]
+        else:
+            new_query = query + " " + input_docs
+    else:
+        new_query = query + " " + input_docs
+        
+
+    return new_query
+def number_duplicate_qids(q_ids):
+    counter = defaultdict(int)
+    new_qids = []
+
+    for qid in q_ids:
+        idx = counter[qid]
+        new_qids.append(f"{qid}_{idx}")
+        counter[qid] += 1
+
+    return new_qids
+
+
+def _batch_search(queries, search_host_url,question_ids=None, tasks=None):
+        
+        """Batchified search for queries — PARALLELIZED per task via ThreadPoolExecutor."""
+        final_scores = {}
+        task2datas = defaultdict(lambda: {
+            "q_ids": [],
+            "questions": []
+        })
+
+        for qid, query, task in zip(question_ids, queries, tasks):
+            task2datas[task]["q_ids"].append(qid)
+            task2datas[task]["questions"].append(query)
+
+        def _search_one_task(task, id_query):
+            ids = number_duplicate_qids(id_query["q_ids"])
+            path_excluded_ids = {qid: ["N/A"] for qid in ids}
+            payload = {
+                "task": task,
+                "q_id_list": ids,
+                "q_text_list": id_query["questions"],
+                "excluded_ids": path_excluded_ids,
+                "num_hits": 20,
+            }
+            max_retries = 5
+            for attempt in range(max_retries):
+                try:
+                    resp = requests.post(search_host_url, json=payload, timeout=300)
+                    resp.raise_for_status()
+                    return task, resp.json()
+                except Exception as e:
+                    wait_time = 2 ** attempt
+                    print(f"[_batch_search] task={task}, attempt {attempt+1}/{max_retries} failed: {e}. "
+                          f"Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+            print(f"[_batch_search] WARNING: All {max_retries} retries failed for task={task}")
+            return task, None
+
+        with ThreadPoolExecutor(max_workers=min(12, len(task2datas))) as executor:
+            futures = {
+                executor.submit(_search_one_task, task, id_query): task
+                for task, id_query in task2datas.items()
+            }
+            for future in as_completed(futures):
+                task, data = future.result()
+                if data is None:
+                    continue
+                id_doc_scores = data["scores"]
+                for inst_id, (qid, docs_score) in enumerate(id_doc_scores.items()):
+                    final_scores[(task, qid, inst_id)] = docs_score
+
+        return final_scores
+
+def dcg_at_k(relevances, k=10):
+    """relevances: list of relevance scores in ranked order"""
+    dcg = 0.0
+    for i in range(min(k, len(relevances))):
+        rel = relevances[i]
+        dcg += (2**rel - 1) / math.log2(i + 2)   # i starts from 0, so rank = i+1
+    return dcg
+
+
+def ndcg_at_k(retrieved_scores: dict, ground_truth_ids: list, k=10):
+    """
+    retrieved_scores: dict {doc_id: score} (higher is better)
+    ground_truth_ids: list of relevant doc_ids
+    k: cutoff (default 10)
+
+    Uses binary relevance: rel=1 if doc_id in ground_truth_ids else 0
+    """
+    # Sort retrieved docs by score descending
+    ranked_docs = sorted(retrieved_scores.items(), key=lambda x: x[1], reverse=True)
+    ranked_doc_ids = [doc_id for doc_id, _ in ranked_docs[:k]]
+
+    # Compute relevance list (binary)
+    relevances = [1 if doc_id in ground_truth_ids else 0 for doc_id in ranked_doc_ids]
+
+    # DCG
+    dcg = dcg_at_k(relevances, k)
+
+    # IDCG (ideal ranking: all relevant docs first)
+    ideal_relevances = [1] * min(len(ground_truth_ids), k)
+    idcg = dcg_at_k(ideal_relevances, k)
+
+    if idcg == 0:
+        return 0.0
+
+    return dcg / idcg
+
+def compute_score_batch(solution_strs, ground_truths, extra_infos_list, **kwargs):
+    """Batch version of compute_score. Makes ONE _batch_search call for ALL samples.
+
+    Instead of calling _batch_search N times with 1 query each, this collects
+    all N queries and sends them in a single call (one HTTP POST per unique task).
+
+    Args:
+        solution_strs: list of decoded model response strings
+        ground_truths: list of ground truths (unused for BRIGHT, kept for API compat)
+        extra_infos_list: list of extra_info dicts
+
+    Returns:
+        list of float scores (NDCG@10), one per sample
+    """
+    n = len(solution_strs)
+    scores = [0.0] * n
+
+    # Step 1: Prepare expanded queries for ALL samples
+    expanded_queries = []
+    question_ids = []
+    tasks_list = []
+    ground_truth_ids_list = []
+    valid_indices = []  # maps position in parallel arrays -> original sample index
+
+    for i in range(n):
+        extra_info = extra_infos_list[i]
+        if extra_info is None:
+            continue
+        try:
+            input_docs = extra_info["initial_doc"]
+            query = extra_info["question"]
+            task = extra_info["task"]
+            sample_id = extra_info["id"]
+            ground_truth = extra_info["interaction_kwargs"]["ground_truth"]
+
+            sequences_str = extract_expand_query(solution_strs[i], input_docs, query)
+            question_id = sample_id.split(task + "_")[1]
+
+            if not isinstance(ground_truth, list):
+                ground_truth = [ground_truth]
+
+            expanded_queries.append(sequences_str)
+            question_ids.append(question_id)
+            tasks_list.append(task)
+            ground_truth_ids_list.append(ground_truth)
+            valid_indices.append(i)
+        except Exception as e:
+            print(f"[compute_score_batch] Failed to prepare sample {i}: {e}")
+            continue
+
+    if not expanded_queries:
+        return scores
+
+    # Step 2: ONE _batch_search call for ALL queries
+    retrieval_url = os.getenv("BRIGHT_RETRIEVAL_URL", DEFAULT_BRIGHT_RETRIEVAL_URL)
+    print(f"[compute_score_batch] Batch searching {len(expanded_queries)} queries -> {len(set(tasks_list))} tasks")
+
+    final_all_scores = _batch_search(
+        expanded_queries,
+        search_host_url=retrieval_url,
+        question_ids=question_ids,
+        tasks=tasks_list,
+    )
+
+    # Step 3: Map results back to original sample order and compute NDCG@10
+    # _batch_search groups by task internally, so results come back in task-grouped order.
+    # We need to reverse-map: for each task, track which positions in our parallel arrays it maps to.
+    task_to_positions = defaultdict(list)
+    for pos, task in enumerate(tasks_list):
+        task_to_positions[task].append(pos)
+
+    task_counters = defaultdict(int)
+    for (task, qid, inst_id), did_scores in final_all_scores.items():
+        counter = task_counters[task]
+        task_counters[task] += 1
+        if counter < len(task_to_positions[task]):
+            pos = task_to_positions[task][counter]
+            orig_idx = valid_indices[pos]
+            gt_ids = ground_truth_ids_list[pos]
+            ndcg = ndcg_at_k(did_scores, gt_ids, k=10)
+            scores[orig_idx] = ndcg
+
+    return scores
+
+
+def compute_score(solution_str, ground_truth, method="strict", format_score=0.0, score=1.0, extra_info=None, **kwargs):
+    """The scoring function for GSM8k.
+
+    Reference: Trung, Luong, et al. "Reft: Reasoning with reinforced fine-tuning." Proceedings of the 62nd Annual
+    Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2024.
+
+    Args:
+        solution_str: the solution text
+        ground_truth: the ground truth
+        method: the method to extract the solution, choices are 'strict' and 'flexible'
+        format_score: the score for the format
+        score: the score for the correct answer
+    """
+    # Extract query and initial documents from extra_info
+    if extra_info is None:
+        # Fallback to pure answer-based scoring if no extra_info is provided
+        # answer = extract_solution(solution_str=solution_str, method=method)
+        # if answer is None:
+        return 0
+        # return score。if answer == ground_truth else format_score
+
+    input_docs = extra_info["initial_doc"]
+    query = extra_info["question"]
+
+    # Use model's trajectory (solution_str) plus retrieved docs/query to build expanded query
+    sequences_str = extract_expand_query(solution_str, input_docs, query)
+
+    ground_truth_doc_ids = [extra_info["interaction_kwargs"]["ground_truth"]]
+    # Ensure list type for downstream loop
+  
+
+
+    task = extra_info["task"]
+    question_id = extra_info["id"].split(task+"_")[1]  # qid, e.g. sustainable_living_4173
+
+    # Load retrieval URL in the same way as bright_tool_config.yaml:
+    # prefer env BRIGHT_RETRIEVAL_URL, otherwise use the default.
+    retrieval_url = os.getenv("BRIGHT_RETRIEVAL_URL", DEFAULT_BRIGHT_RETRIEVAL_URL)
+
+    final_all_scores = _batch_search(
+        [sequences_str],
+        search_host_url=retrieval_url,
+        question_ids=[question_id],
+        tasks=[task],
+    )
+    flag=-1
+    scores=[]
+    for key, value in final_all_scores.items():
+        """
+        key: ('aops', 'aops_2019_AMC_12A_Problems/Problem_17_0', 0)-
+        value: -{'aqua_rat_60379': 1.0, 'aqua_rat_11491': 0.95813}
+        """
+        flag=flag+1
+        ground_id=ground_truth_doc_ids[flag]
+        retrieved_scores=value
+        NDCG_10=ndcg_at_k(retrieved_scores, ground_id, k=10)
+        scores.append(NDCG_10)
+    return scores[0]  # since we only have one query in the batch, return the first score
+        
+ 
+    # answer = extract_solution(solution_str=solution_str, method=method)
+    # if answer is None:
+    #     return 0
+    # else:
+    #     if answer == ground_truth:
+    #         return score
+    #     else:
+    #         return format_score
