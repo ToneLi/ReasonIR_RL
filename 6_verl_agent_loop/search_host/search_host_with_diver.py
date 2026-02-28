@@ -302,11 +302,11 @@ def progressive_query_rewrite(
 
     return query, response_list, accumulated_query_expansions
 
-dataset_source = '/home/mingchen/3_Query_rewrite_RL/3_Diver-main/data/BRIGHT'
+dataset_source = os.environ.get('DATASET_SOURCE', '/home/mingchen/3_Query_rewrite_RL/3_Diver-main/data/BRIGHT')
 
-model_path = "AQ-MedAI/Diver-Retriever-4B"
-model_name = "diver-retriever"
-cache_dir = "/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/cache/cache_diver-retriever"
+model_path = os.environ.get('MODEL_PATH', 'AQ-MedAI/Diver-Retriever-4B')
+model_name = os.environ.get('MODEL_NAME', 'diver-retriever')
+cache_dir = os.environ.get('CACHE_DIR', '/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/cache/cache_diver-retriever')
 
 model = Qwen3EmbeddingModel(model_path)
 
