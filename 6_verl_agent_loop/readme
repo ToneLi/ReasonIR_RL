@@ -1,7 +1,7 @@
 ### step1
 
 ```
-bash 0_reasoning_step_generation.sh
+   search host run_search_host_with_diver.sh
 ```
 ### step2
 
