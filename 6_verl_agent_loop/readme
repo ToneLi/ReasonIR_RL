@@ -1,5 +1,12 @@
-###
+### step1
 
 ```
 bash 0_reasoning_step_generation.sh
+```
+### step2
+
+```
+
+get into  ver-main and run:
+run_qwen3-4_bright_tool_agent.sh
 ```
