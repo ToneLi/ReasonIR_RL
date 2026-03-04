@@ -1,0 +1,15 @@
+wandb: Detected [openai] in use.
+wandb: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+wandb: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Checkpoint tracker file does not exist: /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl_checkpoints/latest_checkpointed_iteration.txt
+Training from scratch
+test_gen_batch meta info: {'eos_token_id': 151645, 'pad_token_id': 151654, 'recompute_log_prob': False, 'do_sample': False, 'validate': True, 'global_steps': 0}
+validation generation end
+("Initial validation metrics: {'val-aux/bright/reward/mean@1': "
+ "np.float64(0.5668962157269319), 'val-core/bright/acc/mean@1': "
+ "np.float64(0.5668962135318547), 'val-aux/num_turns/min': np.int32(2), "
+ "'val-aux/num_turns/max': np.int32(6), 'val-aux/num_turns/mean': "
+ 'np.float64(4.8566666666666665)}')
+Training Progress:   1%|          | 2/320 [29:31<78:32:27, 889.14s/it]
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/1.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/2.jsonl

@@ -1,0 +1,13 @@
+{"time":"2026-03-03T18:32:00.244345662-05:00","level":"INFO","msg":"stream: starting","core version":"0.24.2"}
+{"time":"2026-03-03T18:32:00.644421412-05:00","level":"INFO","msg":"stream: created new stream","id":"uko1fu2e"}
+{"time":"2026-03-03T18:32:00.644568749-05:00","level":"INFO","msg":"handler: started","stream_id":"uko1fu2e"}
+{"time":"2026-03-03T18:32:00.644683335-05:00","level":"INFO","msg":"stream: started","id":"uko1fu2e"}
+{"time":"2026-03-03T18:32:00.64470776-05:00","level":"INFO","msg":"writer: started","stream_id":"uko1fu2e"}
+{"time":"2026-03-03T18:32:00.644725011-05:00","level":"INFO","msg":"sender: started","stream_id":"uko1fu2e"}
+{"time":"2026-03-03T18:42:31.961686929-05:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/li003378-university-of-minnesota/bright_tool-agent/uko1fu2e/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2026-03-03T19:00:57.401811083-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2026-03-03T19:00:57.547547921-05:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2026-03-03T19:00:57.550605063-05:00","level":"INFO","msg":"stream: closing","id":"uko1fu2e"}
+{"time":"2026-03-03T19:00:57.550625927-05:00","level":"INFO","msg":"handler: closed","stream_id":"uko1fu2e"}
+{"time":"2026-03-03T19:00:57.550697827-05:00","level":"INFO","msg":"sender: closed","stream_id":"uko1fu2e"}
+{"time":"2026-03-03T19:00:57.550728912-05:00","level":"INFO","msg":"stream: closed","id":"uko1fu2e"}

@@ -45,6 +45,17 @@ def default_compute_score(
         from . import gsm8k
 
         res = gsm8k.compute_score(solution_str, ground_truth)
+    elif data_source in ["bright"]:
+        from . import bright
+
+        # Pass extra_info (and any other kwargs) so bright.compute_score
+        # can access fields like qid/id from the dataset.
+        res = bright.compute_score(
+            solution_str,
+            ground_truth,
+            extra_info=extra_info,
+            **kwargs,
+        )
     elif data_source in ["lighteval/MATH", "DigitalLearningGmbH/MATH-lighteval", "HuggingFaceH4/MATH-500"]:
         from . import math_reward
 

@@ -1,0 +1,34 @@
+wandb: Detected [openai] in use.
+wandb: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+wandb: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Checkpoint tracker file does not exist: /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl_checkpoints/latest_checkpointed_iteration.txt
+Training from scratch
+test_gen_batch meta info: {'eos_token_id': 151645, 'pad_token_id': 151654, 'recompute_log_prob': False, 'do_sample': False, 'validate': True, 'global_steps': 0}
+validation generation end
+("Initial validation metrics: {'val-aux/bright/reward/mean@1': "
+ "np.float64(0.5626816394428412), 'val-core/bright/acc/mean@1': "
+ "np.float64(0.5626816376139591), 'val-aux/num_turns/min': np.int32(2), "
+ "'val-aux/num_turns/max': np.int32(6), 'val-aux/num_turns/mean': "
+ 'np.float64(4.8933333333333335)}')
+Training Progress:   7%|▋         | 21/320 [4:51:27<65:25:13, 787.67s/it]
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/1.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/2.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/3.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/4.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/5.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/6.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/7.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/8.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/9.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/10.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/11.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/12.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/13.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/14.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/15.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/16.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/17.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/18.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/19.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/20.jsonl
+Dumped generations to /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/rollout_data_batch/21.jsonl

@@ -15,13 +15,16 @@
 
 import json
 import logging
+import os
 import threading
 import time
 import traceback
 import uuid
 from typing import Any, Optional
+from collections import defaultdict
 
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DEFAULT_TIMEOUT = 30  # Default search request timeout
 MAX_RETRIES = 10
@@ -241,5 +244,200 @@ def perform_single_search_batch(
             {"result": "Unknown API state (no response and no error message)."}, ensure_ascii=False
         )
         logger.error("Batch search: Unknown API state.")
+
+    return result_text, metadata
+
+
+# ---------------------------------------------------------------------------
+# BRIGHT-specific batch search utilities
+# ---------------------------------------------------------------------------
+
+def _get_env_list(var_name: str, default_value: list[str]) -> list[str]:
+    """Return list from env var; accept JSON array or comma-separated string."""
+    raw_value = os.getenv(var_name)
+    if not raw_value:
+        return default_value
+    try:
+        parsed = json.loads(raw_value)
+        if isinstance(parsed, list):
+            return [str(item).strip() for item in parsed if str(item).strip()]
+    except json.JSONDecodeError:
+        pass
+    return [item.strip() for item in raw_value.split(",") if item.strip()]
+
+
+DEFAULT_TASKS = [
+    "biology",
+    "earth_science",
+    "economics",
+    "psychology",
+    "robotics",
+    "stackoverflow",
+    "sustainable_living",
+    "leetcode",
+    "pony",
+    "aops",
+    "theoremqa_theorems",
+    "theoremqa_questions",
+]
+DEFAULT_CACHE_DIR = "/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/cache/cache_diver-retriever"
+DEFAULT_BASE_DOC_DIR = (
+    "/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/0_evaluation/bright/"
+    "Diver/Retriever/data/BRIGHT/document"
+)
+
+
+# Module-level document cache: (task, doc_id) -> content
+did2content: dict[tuple[str, str], str] = {}
+_did2content_loaded = False
+
+
+def _load_task_documents(tasks=None, base_doc_dir=None, cache_dir=None):
+    """Load documents for multiple tasks and build did2content mapping."""
+    global _did2content_loaded
+    if _did2content_loaded:
+        return
+
+    if tasks is None:
+        tasks = _get_env_list("BRIGHT_TASKS", DEFAULT_TASKS)
+    if base_doc_dir is None:
+        base_doc_dir = os.getenv("BRIGHT_BASE_DOC_DIR", DEFAULT_BASE_DOC_DIR)
+    if cache_dir is None:
+        cache_dir = os.getenv("BRIGHT_CACHE_DIR", DEFAULT_CACHE_DIR)
+
+    from datasets import load_dataset
+
+    for task in tasks:
+        doc_path = os.path.join(base_doc_dir, f"{task}-00000-of-00001.parquet")
+        if not os.path.exists(doc_path):
+            logger.warning(f"Document file not found: {doc_path}")
+            continue
+        doc_pairs = load_dataset("parquet", data_files=doc_path, cache_dir=cache_dir)["train"]
+        for dp in doc_pairs:
+            doc_id = dp["id"]
+            content = dp["content"]
+            did2content[(task, doc_id)] = content
+
+    _did2content_loaded = True
+    logger.info(f"[BRIGHT] Loaded {len(did2content)} documents across {len(tasks)} tasks")
+
+
+def _ensure_did2content():
+    """Ensure did2content is loaded (lazy initialization)."""
+    if not _did2content_loaded:
+        _load_task_documents()
+
+
+def number_duplicate_qids(q_ids):
+    counter = defaultdict(int)
+    new_qids = []
+    for qid in q_ids:
+        idx = counter[qid]
+        new_qids.append(f"{qid}_{idx}")
+        counter[qid] += 1
+    return new_qids
+
+
+def _batch_search(queries, question_ids=None, tasks=None, search_url=None):
+    """Batchified search for queries — PARALLELIZED per task via ThreadPoolExecutor."""
+    final_scores = {}
+    task2datas = defaultdict(lambda: {
+        "q_ids": [],
+        "questions": []
+    })
+
+    for qid, query, task in zip(question_ids, queries, tasks):
+        task2datas[task]["q_ids"].append(qid)
+        task2datas[task]["questions"].append(query)
+
+    def _search_one_task(task, id_query):
+        ids = number_duplicate_qids(id_query["q_ids"])
+        path_excluded_ids = {qid: ["N/A"] for qid in ids}
+        payload = {
+            "task": task,
+            "q_id_list": ids,
+            "q_text_list": id_query["questions"],
+            "excluded_ids": path_excluded_ids,
+            "num_hits": 20,
+        }
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                resp = requests.post(search_url, json=payload)
+                resp.raise_for_status()
+                return task, resp.json()
+            except Exception as e:
+                wait_time = 2 ** attempt
+                print(f"[_batch_search] task={task}, attempt {attempt+1}/{max_retries} failed: {e}. "
+                      f"Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+        print(f"[_batch_search] WARNING: All {max_retries} retries failed for task={task}")
+        return task, None
+
+    with ThreadPoolExecutor(max_workers=min(12, len(task2datas))) as executor:
+        futures = {
+            executor.submit(_search_one_task, task, id_query): task
+            for task, id_query in task2datas.items()
+        }
+        for future in as_completed(futures):
+            task, data = future.result()
+            if data is None:
+                continue
+            id_doc_scores = data["scores"]
+            for inst_id, (qid, docs_score) in enumerate(id_doc_scores.items()):
+                final_scores[(task, qid, inst_id)] = docs_score
+
+    return final_scores
+
+
+def perform_single_search_batch_4b(
+    retrieval_service_url: str,
+    query_list: list[str],
+    question_ids,
+    tasks,
+    topk: int = 3,
+    concurrent_semaphore: Optional[threading.Semaphore] = None,
+    timeout: int = DEFAULT_TIMEOUT,
+) -> tuple[str, dict[str, Any]]:
+    """BRIGHT-specific batch search: calls _batch_search and returns formatted documents.
+
+    Args:
+        retrieval_service_url: URL of the retrieval service.
+        query_list: List of search queries.
+        question_ids: Question ID(s).
+        tasks: Task name(s).
+        topk: Number of top results to return.
+    """
+    _ensure_did2content()
+
+    final_all_scores = _batch_search(
+        query_list, [question_ids], [tasks], search_url=retrieval_service_url
+    )
+
+    MAX_DOC_TOKENS = int(os.getenv("BRIGHT_MAX_DOC_TOKENS", "500"))
+
+    def _truncate_doc(text, max_tokens=MAX_DOC_TOKENS):
+        tokens = text.split()
+        return " ".join(tokens[:max_tokens]) if len(tokens) > max_tokens else text
+
+    final_doc = []
+    for qid_task_id, did_scores in final_all_scores.items():
+        task = qid_task_id[0]
+        top_docs = [
+            _truncate_doc(did2content[(task, qid)])
+            for qid, score in list(did_scores.items())[:3]
+        ]
+        final_doc.append(" ".join(top_docs))
+
+    result_text = json.dumps({"result": final_doc}, ensure_ascii=False)
+    metadata = {
+        "query_count": 1,
+        "queries": query_list,
+        "api_request_error": None,
+        "api_response": None,
+        "status": None,
+        "total_results": 3,
+        "formatted_result": None,
+    }
 
     return result_text, metadata

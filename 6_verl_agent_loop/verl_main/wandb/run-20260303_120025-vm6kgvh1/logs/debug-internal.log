@@ -1,0 +1,6 @@
+{"time":"2026-03-03T12:00:26.205482191-05:00","level":"INFO","msg":"stream: starting","core version":"0.24.2"}
+{"time":"2026-03-03T12:00:26.613555293-05:00","level":"INFO","msg":"stream: created new stream","id":"vm6kgvh1"}
+{"time":"2026-03-03T12:00:26.613753676-05:00","level":"INFO","msg":"handler: started","stream_id":"vm6kgvh1"}
+{"time":"2026-03-03T12:00:26.613902313-05:00","level":"INFO","msg":"stream: started","id":"vm6kgvh1"}
+{"time":"2026-03-03T12:00:26.613954849-05:00","level":"INFO","msg":"writer: started","stream_id":"vm6kgvh1"}
+{"time":"2026-03-03T12:00:26.613955194-05:00","level":"INFO","msg":"sender: started","stream_id":"vm6kgvh1"}

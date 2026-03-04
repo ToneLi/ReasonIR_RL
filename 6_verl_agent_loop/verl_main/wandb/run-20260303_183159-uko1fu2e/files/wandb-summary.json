@@ -1,0 +1,1 @@
+{"_runtime":1735.22090843,"_step":0,"val-aux/num_turns/mean":4.863333333333333,"_wandb":{"runtime":1735},"val-aux/num_turns/max":6,"_timestamp":1.7725817585811236e+09,"val-core/bright/acc/mean@1":0.575342549639398,"val-aux/num_turns/min":2,"val-aux/bright/reward/mean@1":0.5753425518671672}

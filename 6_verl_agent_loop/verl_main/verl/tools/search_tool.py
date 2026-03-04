@@ -21,11 +21,12 @@ from contextlib import ExitStack
 from enum import Enum
 from typing import Any, Callable, Optional, TypeVar
 from uuid import uuid4
+import asyncio
 
 import ray
 import ray.actor
 
-from verl.tools.utils.search_r1_like_utils import perform_single_search_batch
+from verl.tools.utils.search_r1_like_utils import perform_single_search_batch, perform_single_search_batch_4b
 from verl.utils.rollout_trace import rollout_trace_op
 
 from .base_tool import BaseTool
@@ -90,26 +91,57 @@ class SearchExecutionWorker:
         if self.rate_limit_worker:
             with ExitStack() as stack:
                 stack.callback(self.rate_limit_worker.release.remote)
-                ray.get(self.rate_limit_worker.acquire.remote())
+                try:
+                    ray.get(self.rate_limit_worker.acquire.remote(), timeout=60)
+                except ray.exceptions.ActorDiedError as e:
+                    logger.warning(f"Rate limiter actor died, fallback to direct execution: {e}")
+                    return fn(*fn_args, **fn_kwargs)
+                except Exception as e:
+                    logger.error(f"Error acquiring rate limit token: {e}")
+                    raise
                 try:
                     return fn(*fn_args, **fn_kwargs)
                 except Exception as e:
-                    # TODO we should make this available to the tool caller
                     logger.warning(f"Error when executing search: {e}")
+                    raise
         else:
             return fn(*fn_args, **fn_kwargs)
 
 
+# Module-level strong reference to the singleton SearchExecutionWorker actor.
+# CRITICAL: keeps the actor alive even when individual SearchTool instances are GC'd.
+_SEARCH_EXECUTION_POOL_HANDLE = None
+
+
 def init_search_execution_pool(
-    num_workers: int, enable_global_rate_limit=True, rate_limit=10, mode: PoolMode = PoolMode.ThreadMode
+    num_workers: int, enable_global_rate_limit=True, rate_limit=10, mode: PoolMode = PoolMode.ThreadMode,
+    pool_name: str = "search-execution-pool",
 ):
-    """Initialize search execution pool."""
+    """Initialize (or retrieve) the singleton search execution pool actor."""
+    global _SEARCH_EXECUTION_POOL_HANDLE
     if mode == PoolMode.ThreadMode:
-        return (
-            ray.remote(SearchExecutionWorker)
-            .options(max_concurrency=num_workers)
-            .remote(enable_global_rate_limit=enable_global_rate_limit, rate_limit=rate_limit)
-        )
+        # Fast path: already initialized in this process — reuse the SAME object.
+        if _SEARCH_EXECUTION_POOL_HANDLE is not None:
+            return _SEARCH_EXECUTION_POOL_HANDLE
+
+        # Slow path (first call in this process): get existing named actor or create one.
+        try:
+            handle = ray.get_actor(pool_name)
+            logger.info(f"[SearchTool] Reusing existing named actor '{pool_name}'")
+        except ValueError:
+            handle = (
+                ray.remote(SearchExecutionWorker)
+                .options(
+                    max_concurrency=num_workers,
+                    name=pool_name,
+                    get_if_exists=True,
+                )
+                .remote(enable_global_rate_limit=enable_global_rate_limit, rate_limit=rate_limit)
+            )
+            logger.info(f"[SearchTool] Created new named actor '{pool_name}' with {num_workers} workers")
+
+        _SEARCH_EXECUTION_POOL_HANDLE = handle
+        return handle
     else:
         raise NotImplementedError("Process mode is not implemented yet")
 
@@ -158,18 +190,22 @@ class SearchTool(BaseTool):
         """
         super().__init__(config, tool_schema)
         self._instance_dict = {}
+        self._pool_retries = config.get("pool_retries", 1)
 
         # Worker and rate limiting configuration
-        self.num_workers = config.get("num_workers", 120)
-        self.rate_limit = config.get("rate_limit", 120)
+        self.num_workers = config.get("num_workers", 32)
+        self.rate_limit = config.get("rate_limit", 32)
         self.timeout = config.get("timeout", 30)
 
-        self.enable_global_rate_limit = config.get("enable_global_rate_limit", True)
+        self.enable_global_rate_limit = False
+        if config.get("enable_global_rate_limit", False):
+            logger.warning("Ignoring enable_global_rate_limit=True to avoid TokenBucketWorker instability.")
         self.execution_pool = init_search_execution_pool(
             num_workers=self.num_workers,
             enable_global_rate_limit=self.enable_global_rate_limit,
             rate_limit=self.rate_limit,
             mode=PoolMode.ThreadMode,
+            pool_name="search-execution-pool",
         )
 
         # Retrieval service configuration
@@ -184,6 +220,18 @@ class SearchTool(BaseTool):
     def get_openai_tool_schema(self) -> OpenAIFunctionToolSchema:
         """Return the OpenAI tool schema."""
         return self.tool_schema
+
+    def _recreate_execution_pool(self):
+        """Recreate the execution pool after actor death."""
+        global _SEARCH_EXECUTION_POOL_HANDLE
+        _SEARCH_EXECUTION_POOL_HANDLE = None
+        self.execution_pool = init_search_execution_pool(
+            num_workers=self.num_workers,
+            enable_global_rate_limit=self.enable_global_rate_limit,
+            rate_limit=self.rate_limit,
+            mode=PoolMode.ThreadMode,
+            pool_name="search-execution-pool",
+        )
 
     async def create(self, instance_id: Optional[str] = None, **kwargs) -> tuple[str, ToolResponse]:
         """Create a tool instance.
@@ -203,12 +251,14 @@ class SearchTool(BaseTool):
         }
         return instance_id, ToolResponse()
 
-    def execute_search(self, instance_id: str, query_list: list, retrieval_service_url: str, topk: int, timeout: int):
-        """Execute search operation using retrieval service.
+    def execute_search(self, instance_id: str, query_list: list, question_ids: list, tasks: list, retrieval_service_url: str, topk: int, timeout: int):
+        """Execute search operation using BRIGHT retrieval service.
 
         Args:
             instance_id: Tool instance ID
             query_list: List of search queries
+            question_ids: List of question IDs
+            tasks: List of tasks
             retrieval_service_url: URL of the retrieval service
             topk: Number of top results to return
             timeout: Request timeout in seconds
@@ -216,11 +266,13 @@ class SearchTool(BaseTool):
         Returns:
             Tuple of (result_text, metadata)
         """
-        result_text, metadata = perform_single_search_batch(
+        result_text, metadata = perform_single_search_batch_4b(
             retrieval_service_url=retrieval_service_url,
             query_list=query_list,
+            question_ids=question_ids,
+            tasks=tasks,
             topk=topk,
-            concurrent_semaphore=None,  # Ray handles concurrency control
+            concurrent_semaphore=None,
             timeout=timeout,
         )
         logger.debug(f"Search result for instance {instance_id}: {result_text}")
@@ -228,47 +280,57 @@ class SearchTool(BaseTool):
 
     @rollout_trace_op
     async def execute(self, instance_id: str, parameters: dict[str, Any], **kwargs) -> tuple[ToolResponse, float, dict]:
-        """Execute the search tool.
+        """Execute the search tool using batch search gateway.
+
+        Instead of sending individual HTTP requests per sample, the gateway collects
+        concurrent search requests from all agent loops and batches them into
+        a single API call per task.
 
         Args:
             instance_id: The instance ID of the tool
-            parameters: Tool parameters containing query_list and optional timeout
+            parameters: Tool parameters containing query_list, question_ids, tasks
 
         Returns: tool_response, tool_reward_score, tool_metrics
-            tool_response: The response str of the tool.
-            tool_reward_score: The step reward score of the tool.
-            tool_metrics: The metrics of the tool.
         """
-        timeout = self.timeout
         query_list_from_params = parameters.get("query_list")
+        agent_data = kwargs.get("agent_data")
 
         if not query_list_from_params or not isinstance(query_list_from_params, list):
             error_msg = "Error: 'query_list' is missing, empty, or not a list in parameters."
             logger.error(f"[SearchTool] {error_msg} Received parameters: {parameters}")
             return ToolResponse(text=json.dumps({"result": error_msg})), 0.0, {}
 
-        # Execute search using Ray execution pool
+        # Use the batch search gateway: concurrent requests from all agent loops
+        # are automatically batched into a single API call per task.
         try:
-            result_text, metadata = await self.execution_pool.execute.remote(
-                self.execute_search, instance_id, query_list_from_params, self.retrieval_service_url, self.topk, timeout
+            from verl.tools.utils.batch_search_gateway import get_batch_search_gateway
+
+            gateway = get_batch_search_gateway(
+                search_url=self.retrieval_service_url,
+                topk=self.topk,
+            )
+
+            result_text = await gateway.search(
+                query=query_list_from_params[0],
+                qid=agent_data.qids,
+                task=agent_data.tasks,
             )
 
             # Store results in instance dictionary
             self._instance_dict[instance_id]["reward"].append(result_text.strip())
 
-            # Convert metadata to metrics
             metrics = {
-                "query_count": metadata.get("query_count", 0),
-                "status": metadata.get("status", "unknown"),
-                "total_results": metadata.get("total_results", 0),
-                "api_request_error": metadata.get("api_request_error"),
+                "query_count": 1,
+                "status": "success",
+                "total_results": self.topk,
+                "api_request_error": None,
             }
 
             return ToolResponse(text=result_text), 0.0, metrics
 
         except Exception as e:
             error_result = json.dumps({"result": f"Search execution failed: {e}"})
-            logger.error(f"[SearchTool] Execution failed: {e}")
+            logger.error(f"[SearchTool] Batch search execution failed: {e}")
             return ToolResponse(text=error_result), 0.0, {"error": str(e)}
 
     async def calc_reward(self, instance_id: str, **kwargs) -> str:

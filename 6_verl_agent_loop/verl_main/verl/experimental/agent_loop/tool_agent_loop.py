@@ -15,9 +15,11 @@ import asyncio
 import json
 import logging
 import os
+import re
 from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
+from types import SimpleNamespace
 
 import torch
 from PIL import Image
@@ -65,8 +67,12 @@ class AgentData:
         tools_kwargs: dict[str, Any],
         interaction: Optional[BaseInteraction] = None,
         interaction_kwargs: Optional[dict[str, Any]] = None,
+        qids: Optional[str] = None,
+        tasks: Optional[str] = None,
     ):
         self.messages = messages
+        self.qids = qids
+        self.tasks = tasks
         self.image_data = image_data
         self.video_data = video_data
         self.metrics = metrics
@@ -161,6 +167,8 @@ class ToolAgentLoop(AgentLoopBase):
         # Create AgentData instance to encapsulate all state
         agent_data = AgentData(
             messages=messages,
+            qids=kwargs.get("id"),
+            tasks=kwargs.get("task"),
             image_data=images,
             video_data=videos,
             metrics=metrics,
@@ -212,17 +220,33 @@ class ToolAgentLoop(AgentLoopBase):
         """Handle the pending state: prepare the prompt and start generation."""
         prompt_ids = await self.apply_chat_template(
             agent_data.messages,
-            tools=self.tool_schemas,
+            tools=None,  # BRIGHT uses <summary>/<satisfy> tags, not OpenAI tool schemas
             images=agent_data.image_data,
             videos=agent_data.video_data,
         )
         agent_data.prompt_ids = prompt_ids
         return AgentState.GENERATING
 
+    def _extract_tag(self, text: str, tag: str) -> str | None:
+        """Extract <tag>...</tag> content from text. Return None if not found."""
+        m = re.search(rf"<{tag}>\s*(.*?)\s*</{tag}>", text, flags=re.DOTALL)
+        if m is None:
+            if tag == "summary" and "<summary>" in text:
+                # Fallback: extract text between <summary> and next < or end of string
+                remainder = text.split("<summary>", 1)[1]
+                clean = re.split(r"<", remainder, maxsplit=1)[0].strip()
+                return clean if clean else None
+            return None
+        return m.group(1).strip()
+
     async def _handle_generating_state(
         self, agent_data: AgentData, sampling_params: dict[str, Any], ignore_termination: bool = False
     ) -> AgentState:
-        """Handle the generating state: generate model response and check for tool calls."""
+        """Handle generating state: generate assistant output, parse <summary>/<satisfy>, and optionally add tool info."""
+
+        # Clear stale tool calls from previous turn to prevent phantom re-retrieval
+        agent_data.tool_calls = []
+
         add_messages: list[dict[str, Any]] = []
 
         with simple_timer("generate_sequences", agent_data.metrics):
@@ -234,6 +258,13 @@ class ToolAgentLoop(AgentLoopBase):
                 video_data=agent_data.video_data,
             )
 
+        # Update preemption metrics
+        if agent_data.metrics.get("num_preempted") is None:
+            agent_data.metrics["num_preempted"] = output.num_preempted if output.num_preempted is not None else -1
+        else:
+            agent_data.metrics["num_preempted"] += output.num_preempted if output.num_preempted is not None else 0
+
+        # Update token buffers
         agent_data.assistant_turns += 1
         agent_data.response_ids = output.token_ids
         agent_data.prompt_ids += agent_data.response_ids
@@ -244,7 +275,7 @@ class ToolAgentLoop(AgentLoopBase):
         if output.routed_experts is not None:
             agent_data.routed_experts = output.routed_experts
 
-        # Check termination conditions
+        # Termination conditions (length / turn limits)
         if not ignore_termination and len(agent_data.response_mask) >= self.response_length:
             return AgentState.TERMINATED
         if self.max_assistant_turns and agent_data.assistant_turns >= self.max_assistant_turns:
@@ -252,8 +283,39 @@ class ToolAgentLoop(AgentLoopBase):
         if self.max_user_turns and agent_data.user_turns >= self.max_user_turns:
             return AgentState.TERMINATED
 
-        # Extract tool calls
-        _, agent_data.tool_calls = await self.tool_parser.extract_tool_calls(agent_data.response_ids)
+        # Decode assistant output text (this turn)
+        assistant_text = self.tokenizer.decode(output.token_ids, skip_special_tokens=True)
+
+        # Strip <think> block safely
+        assistant_text = re.sub(
+            r"<think>.*?</think>", "", "<think>" + assistant_text,
+            flags=re.DOTALL | re.IGNORECASE
+        ).strip()
+
+        # Check for <satisfy> — if "yes", terminate
+        satisfy_val = self._extract_tag(assistant_text, "satisfy")
+        if satisfy_val is not None and "yes" in satisfy_val.lower().strip():
+            agent_data.messages.append({"role": "assistant", "content": assistant_text})
+            return AgentState.TERMINATED
+
+        # Check for <summary> — if present, create retrieval tool call
+        summary_val = self._extract_tag(assistant_text, "summary")
+
+        # Append assistant message
+        agent_data.messages.append({"role": "assistant", "content": assistant_text})
+
+        if summary_val is not None and summary_val.strip():
+            agent_data.tool_calls = [
+                SimpleNamespace(
+                    name="retrieval",
+                    arguments={
+                        "query_list": [summary_val.strip()],
+                        "question_ids": [agent_data.qids],
+                        "tasks": [agent_data.tasks],
+                    },
+                )
+            ]
+            return AgentState.PROCESSING_TOOLS
 
         # Handle interaction if needed
         if self.interaction_config_file:
@@ -415,7 +477,10 @@ class ToolAgentLoop(AgentLoopBase):
         try:
             # TODO: append malformed tool_call to the prompt: invalid function name or arguments
             tool_name = tool_call.name
-            tool_args = json.loads(tool_call.arguments)
+            tool_args = tool_call.arguments
+            if isinstance(tool_args, str):
+                tool_args = json.loads(tool_args)
+
             tool = self.tools[tool_name]
             kwargs = tools_kwargs.get(tool_name, {})
             instance_id, _ = await tool.create(create_kwargs=kwargs.get("create_kwargs", {}))

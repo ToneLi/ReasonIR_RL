@@ -1,0 +1,52 @@
+wandb: Detected [openai] in use.
+wandb: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+wandb: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Checkpoint tracker file does not exist: /data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl_checkpoints/latest_checkpointed_iteration.txt
+Training from scratch
+test_gen_batch meta info: {'eos_token_id': 151645, 'pad_token_id': 151654, 'recompute_log_prob': False, 'do_sample': False, 'validate': True, 'global_steps': 0}
+validation generation end
+("Initial validation metrics: {'val-aux/bright/reward/mean@1': "
+ "np.float64(0.564274542927742), 'val-core/bright/acc/mean@1': "
+ "np.float64(0.5642745413267461), 'val-aux/num_turns/min': np.int32(2), "
+ "'val-aux/num_turns/max': np.int32(6), 'val-aux/num_turns/mean': "
+ 'np.float64(4.886666666666667)}')
+Training Progress:   0%|          | 0/320 [00:00<?, ?it/s]Unhandled error (suppress with 'RAY_IGNORE_UNHANDLED_ERRORS=1'): [36mray::WorkerDict.actor_rollout_update_actor()[39m (pid=204822, ip=172.16.34.29, actor_id=c930cb8dafd6627214e5117901000000, repr=<verl.single_controller.ray.base.WorkerDict object at 0x7f8471c76ab0>)
+  File "/home/mingchen/anaconda3/envs/verl/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/mingchen/anaconda3/envs/verl/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+           ^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl/single_controller/ray/base.py", line 841, in func
+    return getattr(self.worker_dict[key], name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl/single_controller/base/decorator.py", line 456, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl/utils/transferqueue_utils.py", line 314, in dummy_inner
+    output = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl/utils/profiler/profile.py", line 274, in wrapper
+    return func(self_instance, *args, **kwargs_inner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl/workers/fsdp_workers.py", line 919, in update_actor
+    metrics = self.actor.update_policy(data=data)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl/utils/profiler/performance.py", line 105, in f
+    return self.log(decorated_function, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl/utils/profiler/performance.py", line 118, in log
+    output = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/experiment_data_gamma/mingchen/7_verl_agent_loop/ReasonIR_RL/6_verl_agent_loop/verl_main/verl/workers/actor/dp_actor.py", line 547, in update_policy
+    loss.backward()
+  File "/home/mingchen/anaconda3/envs/verl/lib/python3.12/site-packages/torch/_tensor.py", line 647, in backward
+    torch.autograd.backward(
+  File "/home/mingchen/anaconda3/envs/verl/lib/python3.12/site-packages/torch/autograd/__init__.py", line 354, in backward
+    _engine_run_backward(
+  File "/home/mingchen/anaconda3/envs/verl/lib/python3.12/site-packages/torch/autograd/graph.py", line 829, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 13.16 GiB. GPU 0 has a total capacity of 79.18 GiB of which 11.53 GiB is free. Including non-PyTorch memory, this process has 66.06 GiB memory in use. Process 206029 has 1.54 GiB memory in use. Of the allocated memory 64.20 GiB is allocated by PyTorch, and 575.87 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

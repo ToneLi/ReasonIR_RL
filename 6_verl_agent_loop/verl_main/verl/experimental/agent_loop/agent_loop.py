@@ -466,20 +466,98 @@ class AgentLoopWorkerBase:
             batch.meta_info.get("global_steps", -1), index.tolist(), batch.meta_info.get("validate", False)
         )
 
+        # Limit concurrent agent loops per worker to prevent SGLang OOM.
+        # With large batch_size×n the total in-flight sequences can exhaust KV cache.
+        max_concurrent = int(os.environ.get("VERL_MAX_CONCURRENT_PER_WORKER", "64"))
+        semaphore = asyncio.Semaphore(max_concurrent)
+        logger.info(f"Launching {len(batch)} agent loops with max_concurrent={max_concurrent}")
+
+        async def _sem_run(coro):
+            async with semaphore:
+                return await coro
+
         tasks = []
         for i in range(len(batch)):
             trace_this_sample = i in traced_indices
             kwargs = {k: v[i] for k, v in batch.non_tensor_batch.items()}
             tasks.append(
                 asyncio.create_task(
-                    self._run_agent_loop(sampling_params, trajectory_info[i], trace=trace_this_sample, **kwargs)
+                    _sem_run(self._run_agent_loop(sampling_params, trajectory_info[i], trace=trace_this_sample, **kwargs))
                 )
             )
         outputs = await asyncio.gather(*tasks)
 
+        # Batch compute reward scores for ALL outputs in ONE _batch_search call.
+        # This replaces N individual HTTP requests with ~12 (one per BRIGHT task).
+        await self._batch_compute_rewards(outputs, batch)
+
         output = self._postprocess(outputs)
 
         return output
+
+    async def _batch_compute_rewards(self, outputs: list, batch: DataProto):
+        """Batch compute reward scores for ALL outputs in ONE _batch_search call.
+
+        Instead of each sample calling _batch_search individually (N HTTP requests),
+        this collects all N expanded queries and sends them together. _batch_search
+        groups by task internally, so the result is ~12 HTTP requests total
+        (one per BRIGHT task), regardless of how many samples there are.
+
+        Flow:
+            outputs (N samples)
+                -> decode each response -> extract expanded query
+                -> ONE _batch_search(N queries)     # grouped by task internally
+                -> compute NDCG@10 per sample
+                -> set reward_score on each output
+        """
+        # Only run for BRIGHT data and when rewards haven't already been computed
+        data_sources = batch.non_tensor_batch.get("data_source", None)
+        if data_sources is None or not any(str(ds) == "bright" for ds in data_sources):
+            return
+
+        if all(output.reward_score is not None for output in outputs):
+            return  # Already scored inline (e.g. reward_loop_worker)
+
+        # Collect samples that need scoring
+        indices_to_score = []
+        solution_strs = []
+        extra_infos = []
+
+        for i, output in enumerate(outputs):
+            if output.reward_score is not None:
+                continue  # Already scored
+
+            # Decode valid response tokens (response_ids is right-padded)
+            response_ids = output.response_ids.squeeze(0)
+            prompt_length = output.prompt_ids.size(1)
+            valid_response_length = int(output.attention_mask[:, prompt_length:].sum().item())
+            valid_response_ids = response_ids[:valid_response_length]
+            solution_str = self.tokenizer.decode(valid_response_ids, skip_special_tokens=True)
+
+            # Get extra_info from original batch data
+            extra_info = {}
+            if "extra_info" in batch.non_tensor_batch:
+                extra_info = dict(batch.non_tensor_batch["extra_info"][i])
+
+            indices_to_score.append(i)
+            solution_strs.append(solution_str)
+            extra_infos.append(extra_info)
+
+        if not indices_to_score:
+            return
+
+        logger.info(f"[_batch_compute_rewards] Scoring {len(indices_to_score)} samples in one batch call")
+        loop = asyncio.get_event_loop()
+        from verl.utils.reward_score.bright import compute_score_batch
+        scores = await loop.run_in_executor(
+            None,
+            lambda: compute_score_batch(solution_strs, [None] * len(solution_strs), extra_infos)
+        )
+
+        # Set scores on outputs
+        for j, i in enumerate(indices_to_score):
+            outputs[i].reward_score = scores[j]
+            outputs[i].extra_fields["reward_extra_info"] = {"acc": scores[j]}
 
     async def _run_agent_loop(
         self,
@@ -687,7 +765,18 @@ class AgentLoopWorkerBase:
         return position_ids
 
     async def _compute_score(self, output, prompts, responses, attention_mask, input_ids, position_ids, kwargs):
-        """Compute reward score for single sample."""
+        """Compute reward score for single sample.
+
+        SKIPPED when batch reward is enabled (default). Reward will be computed
+        in batch by _batch_compute_rewards() after all agent loops finish.
+        This avoids N individual HTTP retrieval calls (one per sample) and
+        replaces them with ~12 batched calls (one per BRIGHT task).
+        """
+        # Batch reward is computed in generate_sequences after all agent loops complete.
+        # Skip individual per-sample reward computation here.
+        if getattr(self, '_use_batch_reward', True):
+            return
+
         enable_async_reward = (
             self.reward_router_address is not None and self.config.reward_model.enable_resource_pool
         ) or not self.config.reward_model.enable
