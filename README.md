@@ -130,4 +130,4 @@ put [data](https://drive.google.com/drive/folders/1RkP1XhzfsRe5GsgSbYkD7Uc80S_Mc
 conda create -n verl python=3.12
 ```
 
-Download the RL_train_data from [data](https://drive.google.com/drive/folders/1RkP1XhzfsRe5GsgSbYkD7Uc80S_McTLU?usp=drive_link)  , and  put it under the same files with verl_main
+Download the RL_train_data from [data](https://drive.google.com/drive/folders/1nCRURHdBaU73ilU0MjEnds3kd6UpKzk_?usp=sharing)  , and  put it under the same files with verl_main
