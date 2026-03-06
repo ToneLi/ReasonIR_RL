@@ -68,6 +68,7 @@ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
 
 # Default configuration constants
 DEFAULT_TIMEOUT = 60.0
+UPDATE_WEIGHTS_TIMEOUT = 600.0  # 10 minutes – weight sync transfers GBs of tensors
 DEFAULT_MAX_ATTEMPTS = 3
 DEFAULT_RETRY_DELAY = 2.0
 DEFAULT_MAX_CONNECTIONS = 2000
@@ -135,11 +136,11 @@ def launch_server_process(
         other processes have no actual effect.
     """
     p = multiprocessing.Process(target=launch_server, args=(server_args,))
+    p.start()
+
     if server_args.node_rank != 0 or not first_rank_in_node:
         logger.info(f"Server process started with PID {p.pid} for node rank {server_args.node_rank}", flush=True)
         return p
-
-    p.start()
 
     base_url = server_args.url()
     headers = {
@@ -628,8 +629,12 @@ class AsyncHttpServerAdapter(HttpServerAdapter):
         self.max_connections: int = max_connections
 
     @asynccontextmanager
-    async def _get_session(self) -> aiohttp.ClientSession:
+    async def _get_session(self, timeout: Optional[float] = None) -> aiohttp.ClientSession:
         """Context manager for safe session access with proper connection pooling.
+
+        Args:
+            timeout (Optional[float]): Override the default timeout (in seconds).
+                If None, uses self.timeout.
 
         Yields:
             aiohttp.ClientSession: Session instance for making HTTP requests
@@ -645,8 +650,8 @@ class AsyncHttpServerAdapter(HttpServerAdapter):
             ttl_dns_cache=300,
             use_dns_cache=True,
         )
-        timeout = aiohttp.ClientTimeout(total=self.timeout)
-        session = aiohttp.ClientSession(connector=connector, timeout=timeout)
+        effective_timeout = aiohttp.ClientTimeout(total=timeout if timeout is not None else self.timeout)
+        session = aiohttp.ClientSession(connector=connector, timeout=effective_timeout)
 
         try:
             yield session
@@ -690,20 +695,20 @@ class AsyncHttpServerAdapter(HttpServerAdapter):
 
         for attempt in range(self.max_attempts):
             try:
-                async with self._get_session() as session:
+                async with self._get_session(timeout=timeout) as session:
                     if method.upper() == "GET":
-                        async with session.get(url, timeout=timeout) as response:
+                        async with session.get(url) as response:
                             response.raise_for_status()
                             return await _read_async_response(response)
                     else:
-                        async with session.post(url, json=payload or {}, timeout=timeout) as response:
+                        async with session.post(url, json=payload or {}) as response:
                             response.raise_for_status()
                             return await _read_async_response(response)
 
             except asyncio.TimeoutError:
                 logger.warning(f"Async request to {endpoint} timed out (attempt {attempt + 1})")
-            except aiohttp.ClientConnectorError:
-                logger.warning(f"Connection error for {endpoint} (attempt {attempt + 1})")
+            except aiohttp.ClientConnectorError as e:
+                logger.warning(f"Connection error for {endpoint} (attempt {attempt + 1}): {e}")
             except aiohttp.ClientResponseError as e:
                 logger.error(f"HTTP error for {endpoint}: {e}")
                 raise
@@ -774,6 +779,7 @@ class AsyncHttpServerAdapter(HttpServerAdapter):
                 "load_format": load_format,
                 "flush_cache": flush_cache,
             },
+            timeout=UPDATE_WEIGHTS_TIMEOUT,
         )
 
     async def flush_cache(self) -> dict[str, Any]:
