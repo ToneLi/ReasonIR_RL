@@ -6,6 +6,7 @@ set -x
 # Activate the verl conda environment (Python 3.12, required for | union syntax)
 # source /home/mingchen/anaconda3/etc/profile.d/conda.sh
 # conda activate verl
+# 
 
 ulimit -n 65535
 
@@ -23,7 +24,7 @@ export BRIGHT_CACHE_DIR="/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_tes
 export BRIGHT_BASE_DOC_DIR="/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/0_evaluation/bright/Diver/Retriever/data/BRIGHT/document"
 export RAY_max_pending_calls_per_actor=10
 export BRIGHT_MAX_DOC_TOKENS=300
-export BRIGHT_RETRIEVAL_URL="http://172.16.34.29:8515/batch_retrieve"
+export BRIGHT_RETRIEVAL_URL="http://172.16.34.22:8510/batch_retrieve"
 
 CUDA_VISIBLE_DEVICES=0,1 python3 -m verl.trainer.main_ppo \
     --config-path="$CONFIG_PATH" \
@@ -55,7 +56,7 @@ CUDA_VISIBLE_DEVICES=0,1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.name=sglang \
     actor_rollout_ref.rollout.mode=async \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.85 \
-    actor_rollout_ref.rollout.n=6 \
+    actor_rollout_ref.rollout.n=5 \
     actor_rollout_ref.rollout.free_cache_engine=True \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=4 \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
@@ -64,17 +65,17 @@ CUDA_VISIBLE_DEVICES=0,1 python3 -m verl.trainer.main_ppo \
     algorithm.use_kl_in_reward=False \
     trainer.critic_warmup=0 \
     trainer.logger='["wandb"]' \
-    trainer.rollout_data_dir="$PROJECT_DIR/rollout_data_batch" \
+    trainer.rollout_data_dir="$PROJECT_DIR/rollout_data_batch_bright_test" \
     trainer.project_name='bright_tool-agent' \
-    trainer.experiment_name='qwen3-4b-think_bright_our_sft_32' \
+    trainer.experiment_name='qwen3-4b-think_bright_test' \
     trainer.n_gpus_per_node=2 \
     trainer.nnodes=1 \
     trainer.save_freq=50 \
     trainer.total_training_steps=320 \
-    trainer.default_local_dir=verl_checkpoints \
+    trainer.default_local_dir=verl_checkpoints_bright_test \
     trainer.test_freq=50 \
-    data.train_files="$PROJECT_DIR/data_progress/bright/part_48_49_50_rounds_train.parquet" \
-    data.val_files="$PROJECT_DIR/data_progress/bright/part_48_49_50_rounds_dev.parquet" \
+    data.train_files="$PROJECT_DIR/data/part_48_to_50_bright_train.parquet" \
+    data.val_files="$PROJECT_DIR/data/part_48_to_50_bright_dev.parquet" \
     actor_rollout_ref.rollout.multi_turn.tool_config_path="$PROJECT_DIR/examples/sglang_multiturn/config/tool_config/bright_tool_config.yaml" \
     trainer.val_before_train=True \
     trainer.total_epochs=7 $@

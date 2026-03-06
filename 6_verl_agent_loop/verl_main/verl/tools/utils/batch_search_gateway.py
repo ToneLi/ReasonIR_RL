@@ -77,7 +77,7 @@ class AsyncBatchSearchGateway:
         self._lock = asyncio.Lock()
         self._current_batch: Optional["_PendingBatch"] = None
 
-    async def search(self, query: str, qid: str, task: str) -> str:
+    async def search(self, query: str, qid: str, task: str, excluded_ids: Optional[list[str]] = None) -> str:
         """Submit a single search request. Returns when the batched result is available.
 
         This method is called concurrently by multiple agent loop coroutines.
@@ -102,7 +102,7 @@ class AsyncBatchSearchGateway:
             if self._current_batch is None:
                 self._current_batch = _PendingBatch(self)
 
-            self._current_batch.add(query, qid, task, future)
+            self._current_batch.add(query, qid, task, excluded_ids, future)
 
             if self._current_batch.size >= self.max_batch_size:
                 batch_to_execute = self._current_batch
@@ -135,6 +135,7 @@ class _PendingBatch:
         self.queries: list[str] = []
         self.qids: list[str] = []
         self.tasks: list[str] = []
+        self.excluded_ids: list[Optional[list[str]]] = []
         self.futures: list[asyncio.Future] = []
         self.executed = False
 
@@ -142,10 +143,11 @@ class _PendingBatch:
     def size(self) -> int:
         return len(self.queries)
 
-    def add(self, query: str, qid: str, task: str, future: asyncio.Future):
+    def add(self, query: str, qid: str, task: str, excluded_ids: Optional[list[str]], future: asyncio.Future):
         self.queries.append(query)
         self.qids.append(qid)
         self.tasks.append(task)
+        self.excluded_ids.append(excluded_ids)
         self.futures.append(future)
 
     async def execute(self):
@@ -195,6 +197,7 @@ class _PendingBatch:
             question_ids=self.qids,
             tasks=self.tasks,
             search_url=self.gateway.search_url,
+            excluded_ids=self.excluded_ids,
         )
 
         # Map results back to original request order.

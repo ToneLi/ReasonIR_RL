@@ -24,6 +24,15 @@ import math
 DEFAULT_BRIGHT_RETRIEVAL_URL = "http://172.16.34.22:8516/batch_retrieve"
 
 
+def _normalize_question_id(task, sample_id):
+    task_str = "" if task is None else str(task)
+    sample_id_str = "" if sample_id is None else str(sample_id)
+    prefix = f"{task_str}_"
+    if task_str and sample_id_str.startswith(prefix):
+        return sample_id_str[len(prefix):]
+    return sample_id_str
+
+
 def extract_steps(trajectory: str, max_steps: int = 5):
     """Extract per-step info blocks from a trajectory string.
 
@@ -36,10 +45,10 @@ def extract_steps(trajectory: str, max_steps: int = 5):
     pattern = re.compile(
         r"<think>(?P<think>.*?)</think>(?:\\n|\s)*"  # whitespace or literal \n between tags
         r"(?:"
-        r"<summary>(?P<summary1>.*?)</summary>\s*<information>(?P<info1>.*?)</information>"  # well-formed
-        r"|<summary>(?P<summary2>.*?)<information>(?P<info2>.*?)</information>"               # missing </summary>
-        r"|<satisfy>(?P<satisfy>.*?)</satisfy>"                                              # satisfy branch
-        r")",
+        r"<summary>(?P<summary1>.*?)</summary>\s*<information>(?P<info1>.*?)</information>(?:\s*<satisfy>(?P<satisfy1>.*?)</satisfy>)?"  # well-formed, optional satisfy
+        r"|<summary>(?P<summary2>.*?)<information>(?P<info2>.*?)</information>(?:\s*<satisfy>(?P<satisfy2>.*?)</satisfy>)?"               # missing </summary>, optional satisfy
+        r"|<satisfy>(?P<satisfy3>.*?)</satisfy>"                                                                                              # satisfy-only branch
+        r")?",
         flags=re.DOTALL,
     )
 
@@ -49,7 +58,7 @@ def extract_steps(trajectory: str, max_steps: int = 5):
         think = groups.get("think", "")
         summary = groups.get("summary1") or groups.get("summary2")
         information = groups.get("info1") or groups.get("info2")
-        satisfy = groups.get("satisfy")
+        satisfy = groups.get("satisfy1") or groups.get("satisfy2") or groups.get("satisfy3")
         steps.append(
             {
                 "think": think.strip(),
@@ -99,21 +108,42 @@ def number_duplicate_qids(q_ids):
     return new_qids
 
 
-def _batch_search(queries, search_host_url, question_ids=None, tasks=None):
+def _batch_search(queries, search_host_url, question_ids=None, tasks=None, excluded_ids=None):
     """Batchified search for queries — PARALLELIZED per task via ThreadPoolExecutor."""
     final_scores = {}
+    if excluded_ids is None:
+        excluded_ids = [["N/A"] for _ in queries]
+
     task2datas = defaultdict(lambda: {
         "q_ids": [],
-        "questions": []
+        "questions": [],
+        "excluded_ids": []
     })
 
-    for qid, query, task in zip(question_ids, queries, tasks):
+    for qid, query, task, excluded in zip(question_ids, queries, tasks, excluded_ids):
         task2datas[task]["q_ids"].append(qid)
         task2datas[task]["questions"].append(query)
+        task2datas[task]["excluded_ids"].append(excluded)
 
     def _search_one_task(task, id_query):
         ids = number_duplicate_qids(id_query["q_ids"])
-        path_excluded_ids = {qid: ["N/A"] for qid in ids}
+        raw_excluded_ids = id_query["excluded_ids"]
+        normalized_excluded_ids = []
+        for ex_ids in raw_excluded_ids:
+            if ex_ids is None:
+                normalized_excluded_ids.append(["N/A"])
+            elif not isinstance(ex_ids, (list, tuple, set)):
+                normalized_excluded_ids.append(["N/A"])
+            elif len(ex_ids) == 0:
+                normalized_excluded_ids.append(["N/A"])
+            else:
+                normalized_excluded_ids.append(ex_ids)
+
+        if len(normalized_excluded_ids) < len(ids):
+            normalized_excluded_ids.extend([["N/A"] for _ in range(len(ids) - len(normalized_excluded_ids))])
+
+        path_excluded_ids = {qid: ex_ids for qid, ex_ids in zip(ids, normalized_excluded_ids)}
+       
         payload = {
             "task": task,
             "q_id_list": ids,
@@ -134,6 +164,8 @@ def _batch_search(queries, search_host_url, question_ids=None, tasks=None):
                 time.sleep(wait_time)
         print(f"[_batch_search] WARNING: All {max_retries} retries failed for task={task}")
         return task, None
+
+
 
     with ThreadPoolExecutor(max_workers=min(12, len(task2datas))) as executor:
         futures = {
@@ -198,7 +230,15 @@ def compute_score_batch(solution_strs, ground_truths, extra_infos_list, **kwargs
     Returns:
         list of float scores (NDCG@10), one per sample
     """
-    n = len(solution_strs)
+    n_solution = len(solution_strs)
+    n_extra = len(extra_infos_list)
+    if n_solution != n_extra:
+        print(
+            f"[compute_score_batch] Warning: length mismatch solution_strs={n_solution}, extra_infos_list={n_extra}; "
+            f"using first {min(n_solution, n_extra)} samples"
+        )
+
+    n = min(n_solution, n_extra)
     scores = [0.0] * n
 
     # Step 1: Prepare expanded queries for ALL samples
@@ -207,6 +247,7 @@ def compute_score_batch(solution_strs, ground_truths, extra_infos_list, **kwargs
     tasks_list = []
     ground_truth_ids_list = []
     valid_indices = []  # maps position in parallel arrays -> original sample index
+    excluded_ids_list = []
 
     for i in range(n):
         extra_info = extra_infos_list[i]
@@ -217,10 +258,11 @@ def compute_score_batch(solution_strs, ground_truths, extra_infos_list, **kwargs
             query = extra_info["question"]
             task = extra_info["task"]
             sample_id = extra_info["id"]
+            excluded_ids= extra_info.get("excluded_ids") # for excample , ["N/A"]
             ground_truth = extra_info["interaction_kwargs"]["ground_truth"]
 
             sequences_str = extract_expand_query(solution_strs[i], input_docs, query)
-            question_id = sample_id.split(task + "_")[1]
+            question_id = _normalize_question_id(task, sample_id)
 
             if not isinstance(ground_truth, list):
                 ground_truth = [ground_truth]
@@ -230,6 +272,7 @@ def compute_score_batch(solution_strs, ground_truths, extra_infos_list, **kwargs
             tasks_list.append(task)
             ground_truth_ids_list.append(ground_truth)
             valid_indices.append(i)
+            excluded_ids_list.append(excluded_ids)
         except Exception as e:
             print(f"[compute_score_batch] Failed to prepare sample {i}: {e}")
             continue
@@ -246,6 +289,7 @@ def compute_score_batch(solution_strs, ground_truths, extra_infos_list, **kwargs
         search_host_url=retrieval_url,
         question_ids=question_ids,
         tasks=tasks_list,
+        excluded_ids=excluded_ids_list
     )
 
     # Step 3: Map results back to original sample order and compute NDCG@10
@@ -288,15 +332,22 @@ def compute_score(solution_str, ground_truth, method="strict", format_score=0.0,
     ground_truth_doc_ids = [extra_info["interaction_kwargs"]["ground_truth"]]
 
     task = extra_info["task"]
-    question_id = extra_info["id"].split(task + "_")[1]
+    question_id = _normalize_question_id(task, extra_info["id"])
 
     retrieval_url = os.getenv("BRIGHT_RETRIEVAL_URL", DEFAULT_BRIGHT_RETRIEVAL_URL)
+
+    single_excluded_ids = extra_info.get("excluded_ids")
+    if single_excluded_ids is None:
+        single_excluded_ids = [["N/A"]]
+    else:
+        single_excluded_ids = [single_excluded_ids]
 
     final_all_scores = _batch_search(
         [sequences_str],
         search_host_url=retrieval_url,
         question_ids=[question_id],
         tasks=[task],
+        excluded_ids=single_excluded_ids
     )
 
     scores = []

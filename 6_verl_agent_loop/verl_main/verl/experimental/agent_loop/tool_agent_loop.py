@@ -69,10 +69,12 @@ class AgentData:
         interaction_kwargs: Optional[dict[str, Any]] = None,
         qids: Optional[str] = None,
         tasks: Optional[str] = None,
+        excluded_ids: Optional[list[str]] = None,
     ):
         self.messages = messages
         self.qids = qids
         self.tasks = tasks
+        self.excluded_ids = excluded_ids
         self.image_data = image_data
         self.video_data = video_data
         self.metrics = metrics
@@ -169,6 +171,7 @@ class ToolAgentLoop(AgentLoopBase):
             messages=messages,
             qids=kwargs.get("id"),
             tasks=kwargs.get("task"),
+            excluded_ids=kwargs.get("extra_info", {}).get("excluded_ids"),
             image_data=images,
             video_data=videos,
             metrics=metrics,
@@ -312,6 +315,7 @@ class ToolAgentLoop(AgentLoopBase):
                         "query_list": [summary_val.strip()],
                         "question_ids": [agent_data.qids],
                         "tasks": [agent_data.tasks],
+                        "excluded_ids": agent_data.excluded_ids,
                     },
                 )
             ]

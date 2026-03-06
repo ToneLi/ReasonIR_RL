@@ -613,6 +613,7 @@ class RayPPOTrainer:
         sample_outputs = []
         sample_gts = []
         sample_scores = []
+        sample_tasks = []
         sample_turns = []
         sample_uids = []
 
@@ -681,6 +682,15 @@ class RayPPOTrainer:
             sample_inputs.extend(input_texts)
             sample_uids.extend(test_batch.non_tensor_batch["uid"])
 
+            # collect per-sample task names for BRIGHT per-task validation metrics
+            batch_tasks = []
+            for item in test_batch:
+                task_name = item.non_tensor_batch.get("task", None)
+                if task_name is None:
+                    task_name = item.non_tensor_batch.get("extra_info", {}).get("task", None)
+                batch_tasks.append(task_name)
+            sample_tasks.extend(batch_tasks)
+
             # evaluate using reward_function
             result = self._compute_or_extract_reward(test_batch, reward_fn=self.val_reward_fn, return_dict=True)
             reward_tensor = result["reward_tensor"]
@@ -745,6 +755,39 @@ class RayPPOTrainer:
             metric_dict["val-aux/num_turns/min"] = sample_turns.min()
             metric_dict["val-aux/num_turns/max"] = sample_turns.max()
             metric_dict["val-aux/num_turns/mean"] = sample_turns.mean()
+
+        # BRIGHT-specific NDCG@10 curves in W&B:
+        # - per-task NDCG@10 trend for 12 tasks
+        # - overall mean NDCG@10 across those 12 task means
+        bright_tasks = [
+            "biology",
+            "earth_science",
+            "economics",
+            "psychology",
+            "robotics",
+            "stackoverflow",
+            "sustainable_living",
+            "leetcode",
+            "pony",
+            "aops",
+            "theoremqa_theorems",
+            "theoremqa_questions",
+        ]
+
+        if len(sample_tasks) == len(sample_scores) and len(sample_scores) > 0:
+            task_means = []
+            for task_name in bright_tasks:
+                task_scores = [
+                    score for score, sample_task in zip(sample_scores, sample_tasks, strict=True) if sample_task == task_name
+                ]
+                if len(task_scores) > 0:
+                    task_mean = float(np.mean(task_scores))
+                    metric_dict[f"val-ndcg10/task/{task_name}"] = task_mean
+                    task_means.append(task_mean)
+
+            if len(task_means) > 0:
+                metric_dict["val-ndcg10/mean_12tasks"] = float(np.mean(task_means))
+                metric_dict["val-ndcg10/tasks_covered"] = len(task_means)
 
         return metric_dict
 

@@ -338,21 +338,53 @@ def number_duplicate_qids(q_ids):
     return new_qids
 
 
-def _batch_search(queries, question_ids=None, tasks=None, search_url=None):
+def _batch_search(queries, question_ids=None, tasks=None, search_url=None, excluded_ids=None):
     """Batchified search for queries — PARALLELIZED per task via ThreadPoolExecutor."""
     final_scores = {}
+    if excluded_ids is None:
+        excluded_ids = [["N/A"] for _ in queries]
+
+    if question_ids is None or tasks is None:
+        raise ValueError("question_ids and tasks must be provided for _batch_search")
+
+    if not (
+        len(queries) == len(question_ids) == len(tasks) == len(excluded_ids)
+    ):
+        raise ValueError(
+            "_batch_search expects one-to-one mapping among queries/question_ids/tasks/excluded_ids, "
+            f"but got len(queries)={len(queries)}, len(question_ids)={len(question_ids)}, "
+            f"len(tasks)={len(tasks)}, len(excluded_ids)={len(excluded_ids)}"
+        )
+
     task2datas = defaultdict(lambda: {
         "q_ids": [],
-        "questions": []
+        "questions": [],
+        "excluded_ids": [],
     })
 
-    for qid, query, task in zip(question_ids, queries, tasks):
+    for qid, query, task, excluded in zip(question_ids, queries, tasks, excluded_ids):
         task2datas[task]["q_ids"].append(qid)
         task2datas[task]["questions"].append(query)
+        task2datas[task]["excluded_ids"].append(excluded)
 
     def _search_one_task(task, id_query):
         ids = number_duplicate_qids(id_query["q_ids"])
-        path_excluded_ids = {qid: ["N/A"] for qid in ids}
+        raw_excluded_ids = id_query["excluded_ids"]
+        normalized_excluded_ids = []
+        for ex_ids in raw_excluded_ids:
+            if ex_ids is None:
+                normalized_excluded_ids.append(["N/A"])
+            elif not isinstance(ex_ids, (list, tuple, set)):
+                normalized_excluded_ids.append(["N/A"])
+            elif len(ex_ids) == 0:
+                normalized_excluded_ids.append(["N/A"])
+            else:
+                normalized_excluded_ids.append(list(ex_ids))
+
+        if len(normalized_excluded_ids) < len(ids):
+            normalized_excluded_ids.extend([["N/A"] for _ in range(len(ids) - len(normalized_excluded_ids))])
+
+        path_excluded_ids = {qid: ex_ids for qid, ex_ids in zip(ids, normalized_excluded_ids)}
         payload = {
             "task": task,
             "q_id_list": ids,
@@ -395,6 +427,7 @@ def perform_single_search_batch_4b(
     query_list: list[str],
     question_ids,
     tasks,
+    excluded_ids=None,
     topk: int = 3,
     concurrent_semaphore: Optional[threading.Semaphore] = None,
     timeout: int = DEFAULT_TIMEOUT,
@@ -410,8 +443,31 @@ def perform_single_search_batch_4b(
     """
     _ensure_did2content()
 
+    normalized_qids = question_ids if isinstance(question_ids, list) else [question_ids]
+    normalized_tasks = tasks if isinstance(tasks, list) else [tasks]
+
+    if excluded_ids is None:
+        normalized_excluded_ids = [["N/A"] for _ in query_list]
+    elif isinstance(excluded_ids, list) and len(excluded_ids) == len(query_list):
+        normalized_excluded_ids = excluded_ids
+    else:
+        normalized_excluded_ids = [excluded_ids for _ in query_list]
+
+    if not (
+        len(query_list) == len(normalized_qids) == len(normalized_tasks) == len(normalized_excluded_ids)
+    ):
+        raise ValueError(
+            "perform_single_search_batch_4b expects one-to-one mapping among query_list/question_ids/tasks/excluded_ids, "
+            f"but got len(query_list)={len(query_list)}, len(question_ids)={len(normalized_qids)}, "
+            f"len(tasks)={len(normalized_tasks)}, len(excluded_ids)={len(normalized_excluded_ids)}"
+        )
+
     final_all_scores = _batch_search(
-        query_list, [question_ids], [tasks], search_url=retrieval_service_url
+        query_list,
+        question_ids=normalized_qids,
+        tasks=normalized_tasks,
+        search_url=retrieval_service_url,
+        excluded_ids=normalized_excluded_ids,
     )
 
     MAX_DOC_TOKENS = int(os.getenv("BRIGHT_MAX_DOC_TOKENS", "500"))
@@ -424,19 +480,19 @@ def perform_single_search_batch_4b(
     for qid_task_id, did_scores in final_all_scores.items():
         task = qid_task_id[0]
         top_docs = [
-            _truncate_doc(did2content[(task, qid)])
-            for qid, score in list(did_scores.items())[:3]
+            _truncate_doc(did2content.get((task, qid), "[Document not found]"))
+            for qid, score in list(did_scores.items())[:topk]
         ]
         final_doc.append(" ".join(top_docs))
 
     result_text = json.dumps({"result": final_doc}, ensure_ascii=False)
     metadata = {
-        "query_count": 1,
+        "query_count": len(query_list),
         "queries": query_list,
         "api_request_error": None,
         "api_response": None,
         "status": None,
-        "total_results": 3,
+        "total_results": len(final_doc) * topk,
         "formatted_result": None,
     }
 

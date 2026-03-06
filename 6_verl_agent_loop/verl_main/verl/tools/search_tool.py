@@ -251,7 +251,17 @@ class SearchTool(BaseTool):
         }
         return instance_id, ToolResponse()
 
-    def execute_search(self, instance_id: str, query_list: list, question_ids: list, tasks: list, retrieval_service_url: str, topk: int, timeout: int):
+    def execute_search(
+        self,
+        instance_id: str,
+        query_list: list,
+        question_ids: list,
+        tasks: list,
+        retrieval_service_url: str,
+        topk: int,
+        timeout: int,
+        excluded_ids: Optional[list[str]] = None,
+    ):
         """Execute search operation using BRIGHT retrieval service.
 
         Args:
@@ -259,6 +269,7 @@ class SearchTool(BaseTool):
             query_list: List of search queries
             question_ids: List of question IDs
             tasks: List of tasks
+            excluded_ids: Document IDs to exclude from retrieval
             retrieval_service_url: URL of the retrieval service
             topk: Number of top results to return
             timeout: Request timeout in seconds
@@ -271,6 +282,7 @@ class SearchTool(BaseTool):
             query_list=query_list,
             question_ids=question_ids,
             tasks=tasks,
+            excluded_ids=excluded_ids,
             topk=topk,
             concurrent_semaphore=None,
             timeout=timeout,
@@ -310,10 +322,17 @@ class SearchTool(BaseTool):
                 topk=self.topk,
             )
 
+            excluded_ids = kwargs.get("extra_info", {}).get("excluded_ids")
+            if excluded_ids is None:
+                excluded_ids = parameters.get("excluded_ids")
+            if excluded_ids is None and agent_data is not None:
+                excluded_ids = getattr(agent_data, "excluded_ids", None)
+
             result_text = await gateway.search(
                 query=query_list_from_params[0],
                 qid=agent_data.qids,
                 task=agent_data.tasks,
+                excluded_ids=excluded_ids,
             )
 
             # Store results in instance dictionary
