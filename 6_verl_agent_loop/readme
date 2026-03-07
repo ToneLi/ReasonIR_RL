@@ -1,6 +1,6 @@
 ### step1
 get in to search host, and run, bash run_search_host_with_diverbm25.sh,  please revise the content in run_search_host_with_diverbm25.sh,  
-change the DATASET_SOURCE, CACHE_DIR to the dir in your own searver
+change the DATASET_SOURCE, CACHE_DIR to the dir in your own server
 ```
 the content in run_search_host_with_diverbm25.sh
 #!/bin/bash
