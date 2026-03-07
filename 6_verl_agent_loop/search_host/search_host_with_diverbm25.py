@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 from transformers import AutoTokenizer
 #from vllm_server.vllm_completion import VLLMCompletion
 import openai, json
@@ -328,11 +329,24 @@ def progressive_query_rewrite(
 
     return query, response_list, accumulated_query_expansions
 
-dataset_source = '/home/mingchen/3_Query_rewrite_RL/3_Diver-main/data/BRIGHT'
+_workspace_root = Path(__file__).resolve().parents[4]
 
-model_path = "AQ-MedAI/Diver-Retriever-4B"
-model_name = "diver-retriever"
-cache_dir = "/home/mingchen/3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/cache/cache_diver-retriever"
+dataset_source = os.getenv(
+    "BRIGHT_DATASET_SOURCE",
+    str(_workspace_root / "3_Query_rewrite_RL/3_Diver-main/data/BRIGHT")
+)
+  
+model_path = os.getenv("DIVER_MODEL_PATH", "AQ-MedAI/Diver-Retriever-4B")
+model_name = os.getenv("DIVER_MODEL_NAME", "diver-retriever")
+cache_dir = os.getenv(
+    "DIVER_CACHE_DIR",
+    str(_workspace_root / "3_Query_rewrite_RL/3_Diver-main/zero_test_parallel/cache/cache_diver-retriever")
+)
+
+print("dataset_source:", dataset_source)
+print("model_path:", model_path)
+print("model_name:", model_name)
+print("cache_dir:", cache_dir)
 
 model = Qwen3EmbeddingModel(model_path)
 
@@ -480,19 +494,7 @@ def batch_retrieve(req: dict):
     num_hits = req["num_hits"]
 
     dense_scores = search_api.do_retrieval_batch(q_id_list, q_text_list, excluded, num_hits)
-    # loop = asyncio.get_running_loop()
-
-    # -----------------------------
-    # ? dense
-    # -----------------------------
-    # dense_scores = await loop.run_in_executor(
-    #     None,
-    #     lambda: search_api.do_retrieval_batch(
-    #         q_id_list, q_text_list, excluded, num_hits
-    #     )
-    # )
-
-    # queries, query_ids, documents, doc_ids, excluded_ids,
+  
     bm25_scores=retrieval_bm25(Task_corpus_index[req["task"]]["bm25_model"],
                                q_text_list,q_id_list,
                                Task_corpus_index[req["task"]]["dictionary"],
