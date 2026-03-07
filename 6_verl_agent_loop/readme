@@ -1,6 +1,7 @@
 ### step1
-get in to search host, and run, bash run_search_host_with_diverbm25.sh,  please change the DATASET_SOURCE, CACHE_DIR to the dir in your own searver
+get in to search host, and run, bash run_search_host_with_diverbm25.sh,  please revise the content in run_search_host_with_diverbm25.sh,  change the DATASET_SOURCE, CACHE_DIR to the dir in your own searver
 ```
+the content in run_search_host_with_diverbm25.sh
 #!/bin/bash
 
 export DATASET_SOURCE='/home/mingchen/3_Query_rewrite_RL/3_Diver-main/data/BRIGHT'
